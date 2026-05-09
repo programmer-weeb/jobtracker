@@ -1,16 +1,23 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider, createMemoryHistory, createRouter } from "@tanstack/react-router";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { rootRoute } from "./root";
+import { RouterProvider, createMemoryHistory, createRoute, createRouter } from "@tanstack/react-router";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { loginRoute } from "./login";
+import { rootRoute } from "./root";
+
+const loginMutateAsyncMock = vi.fn();
 
 vi.mock("../features/auth/hooks", () => ({
-  useLogin: () => ({ mutateAsync: vi.fn(), isPending: false })
+  useLogin: () => ({ mutateAsync: loginMutateAsyncMock, isPending: false })
 }));
 
 function renderLogin() {
-  const routeTree = rootRoute.addChildren([loginRoute]);
+  const boardRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/board",
+    component: () => <div>Board</div>
+  });
+  const routeTree = rootRoute.addChildren([loginRoute, boardRoute]);
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ["/login"] }),
@@ -26,9 +33,34 @@ function renderLogin() {
 }
 
 describe("login form", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("shows validation errors", async () => {
+    loginMutateAsyncMock.mockResolvedValue(undefined);
     renderLogin();
+
     fireEvent.click(await screen.findByRole("button", { name: /sign in/i }));
+
     expect(await screen.findByText(/invalid email/i)).toBeInTheDocument();
+    expect(loginMutateAsyncMock).not.toHaveBeenCalled();
+  });
+
+  it("submits entered credentials", async () => {
+    loginMutateAsyncMock.mockResolvedValue(undefined);
+    renderLogin();
+
+    const submitButton = await screen.findByRole("button", { name: /sign in/i });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "dev@example.com" } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "secret123" } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(loginMutateAsyncMock).toHaveBeenCalledWith({
+        email: "dev@example.com",
+        password: "secret123"
+      });
+    });
   });
 });
