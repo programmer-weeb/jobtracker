@@ -1,13 +1,11 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, skip: :all
   get "up" => "rails/health#show", as: :rails_health_check
 
-  namespace :auth do
-    post :signup
-    post :login
-    delete :logout
-    get :me
-  end
+  post "/auth/signup", to: "auth#signup"
+  post "/auth/login", to: "auth#login"
+  delete "/auth/logout", to: "auth#logout"
+  get "/auth/me", to: "auth#me"
 
   resources :companies, except: :new
   resources :applications, except: :new do

@@ -266,7 +266,7 @@ Devise.setup do |config|
   # should add them to the navigational formats lists.
   #
   # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
+  config.navigational_formats = []
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :delete
@@ -284,6 +284,17 @@ Devise.setup do |config|
   #   warden_config.intercept_401 = false
   #   warden_config.default_strategies(scope: :user).unshift :some_external_strategy
   # end
+  config.jwt do |jwt|
+    jwt.secret = ENV.fetch("DEVISE_JWT_SECRET_KEY") { Rails.application.secret_key_base }
+    jwt.dispatch_requests = [
+      ["POST", %r{^/auth/login$}],
+      ["POST", %r{^/auth/signup$}]
+    ]
+    jwt.revocation_requests = [
+      ["DELETE", %r{^/auth/logout$}]
+    ]
+    jwt.request_formats = { user: [:json] }
+  end
 
   # ==> Mountable engine configurations
   # When using Devise inside an engine, let's call it `MyEngine`, and this engine
