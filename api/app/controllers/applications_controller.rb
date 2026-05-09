@@ -111,8 +111,11 @@ class ApplicationsController < ApplicationController
   end
 
   def application_params
-    params.require(:application).permit(:company_id, :title, :status, :source, :salary_min, :salary_max,
-                                        :currency, :remote, :location, :url, :applied_at, :position, tag_ids: [])
+    # Status is only allowed on create; update must use /move endpoint
+    allowed = [:company_id, :title, :source, :salary_min, :salary_max,
+               :currency, :remote, :location, :url, :applied_at, tag_ids: []]
+    allowed.insert(2, :status) if action_name == "create"
+    params.require(:application).permit(*allowed)
   end
 
   def sanitized_application_params

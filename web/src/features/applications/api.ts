@@ -28,7 +28,6 @@ export interface UpdateApplicationInput {
   application: {
     company_id?: number;
     title?: string;
-    status?: ApplicationStatus;
     source?: string | null;
     salary_min?: number | null;
     salary_max?: number | null;

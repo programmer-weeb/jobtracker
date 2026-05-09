@@ -272,26 +272,6 @@ RSpec.describe "Applications", type: :request do
       expect(application.reload.title).to eq("New")
     end
 
-    it "creates status_changed event on status transition" do
-      application = create(:application, user: user, company: company, status: :applied)
-
-      patch "/applications/#{application.id}", params: { application: { status: "interview" } }, headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      event = application.reload.events.order(:created_at).last
-      expect(event.kind).to eq("status_changed")
-      expect(event.payload).to include("from" => "applied", "to" => "interview")
-    end
-
-    it "returns validation errors for invalid status update" do
-      application = create(:application, user: user, company: company, status: :applied)
-
-      patch "/applications/#{application.id}", params: { application: { status: "not-real-status" } }, headers: headers, as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(JSON.parse(response.body)).to include("errors")
-      expect(JSON.parse(response.body).fetch("errors").first).to include("is not a valid status")
-    end
 
     it "rejects updating to another user's company" do
       application = create(:application, user: user, company: company)
@@ -333,6 +313,20 @@ RSpec.describe "Applications", type: :request do
       application.reload
       expect(application.company_id).to eq(own_company.id)
       expect(application.tags.map(&:id)).to eq([own_tag.id])
+    end
+
+    it "ignores status and position in update params" do
+      application = create(:application, user: user, company: company, status: :wishlist, position: 100)
+
+      patch "/applications/#{application.id}", params: {
+        application: { title: "Updated", status: "applied", position: 500 }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      application.reload
+      expect(application.title).to eq("Updated")
+      expect(application.status).to eq("wishlist")
+      expect(application.position).to eq(100)
     end
   end
 
