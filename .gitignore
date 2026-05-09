@@ -1,0 +1,25 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# JetBrains IDEs
+.idea/
+
+# Ruby
+**/.bundle
+**/config/master.key
+**/config/credentials/*.key
+**/log/*
+**/tmp/*
+!**/log/.keep
+!**/tmp/.keep
+!**/tmp/pids/.keep
+!**/tmp/cache/.keep
+!**/tmp/storage/.keep
+**/coverage
+
+# Node
+**/node_modules
+**/dist
+**/.vite
