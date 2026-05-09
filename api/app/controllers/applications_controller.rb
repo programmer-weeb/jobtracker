@@ -13,7 +13,7 @@ class ApplicationsController < ApplicationController
 
   def show
     authorize @application
-    render json: { data: application_payload(@application) }, status: :ok
+    render json: { data: application_payload(@application, include_notes: true) }, status: :ok
   end
 
   def create
@@ -136,13 +136,16 @@ class ApplicationsController < ApplicationController
     end
   end
 
-  def application_payload(application)
+  def application_payload(application, include_notes: false)
+    include_payload = {
+      company: { only: %i[id name website location] },
+      tags: { only: %i[id name color] }
+    }
+    include_payload[:notes] = { only: %i[id application_id body created_at updated_at] } if include_notes
+
     application.as_json(
       only: %i[id user_id company_id title status source salary_min salary_max currency remote location url applied_at position created_at updated_at],
-      include: {
-        company: { only: %i[id name website location] },
-        tags: { only: %i[id name color] }
-      }
+      include: include_payload
     )
   end
 end

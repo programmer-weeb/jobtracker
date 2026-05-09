@@ -144,6 +144,20 @@ RSpec.describe "Applications", type: :request do
     end
   end
 
+  describe "GET /applications/:id" do
+    it "returns application detail with notes" do
+      application = create(:application, user: user, company: company)
+      note = create(:note, application: application, body: "Followed up")
+
+      get "/applications/#{application.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      payload = JSON.parse(response.body).fetch("data")
+      expect(payload.fetch("id")).to eq(application.id)
+      expect(payload.fetch("notes").map { |entry| entry.fetch("id") }).to include(note.id)
+    end
+  end
+
   describe "authorization boundaries" do
     it "does not show another user's application" do
       other_application = create(:application)
