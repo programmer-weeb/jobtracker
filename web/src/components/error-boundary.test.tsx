@@ -2,7 +2,7 @@ import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ErrorBoundary } from "./error-boundary";
 
-function ThrowingComponent() {
+function ThrowingComponent(): React.ReactNode {
   throw new Error("Test error");
 }
 
@@ -40,7 +40,9 @@ describe("ErrorBoundary", () => {
   it("displays reload button that triggers reload on click", () => {
     const originalLocation = window.location;
     const reloadFn = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).location = { ...originalLocation, reload: reloadFn };
 
     render(
@@ -53,6 +55,7 @@ describe("ErrorBoundary", () => {
     fireEvent.click(reloadButton);
 
     expect(reloadFn).toHaveBeenCalled();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).location = originalLocation;
   });
 });

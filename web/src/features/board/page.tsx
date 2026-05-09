@@ -150,7 +150,7 @@ export function BoardPage() {
           tags={tags}
           companies={companies}
           onChange={(next) => {
-            void navigate({ to: "/board", search: toSearchFilters(next) });
+            void navigate({ to: "/board", search: toSearchFilters({ ...next, page: undefined }) });
           }}
           onSearchChange={(value) => {
             if (searchDebounceRef.current !== null) {
@@ -160,7 +160,7 @@ export function BoardPage() {
             searchDebounceRef.current = window.setTimeout(() => {
               void navigate({
                 to: "/board",
-                search: toSearchFilters({ ...filters, q: value.trim() || undefined })
+                search: toSearchFilters({ ...filters, q: value.trim() || undefined, page: undefined })
               });
             }, 300);
           }}

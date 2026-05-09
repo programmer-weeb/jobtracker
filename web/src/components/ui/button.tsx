@@ -10,7 +10,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]",
         secondary: "bg-[var(--surface-soft)] text-[var(--foreground)] hover:bg-[var(--surface-muted)]",
-        ghost: "text-[var(--foreground)] hover:bg-[var(--surface-soft)]"
+        ghost: "text-[var(--foreground)] hover:bg-[var(--surface-soft)]",
+        outline: "border border-[var(--border)] bg-transparent hover:bg-[var(--surface-soft)] text-[var(--foreground)]",
+        destructive: "bg-[var(--danger)] text-white hover:bg-[var(--danger)]/90"
       },
       size: {
         default: "h-10 px-4 py-2",

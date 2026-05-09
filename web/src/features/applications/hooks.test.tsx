@@ -125,7 +125,7 @@ describe("Application Hooks", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const cached = queryClient.getQueryData(queryKeys.applications({ page: 2, per_page: 25 })) as any;
+    const cached = queryClient.getQueryData<{ data: Application[], meta: typeof listMeta }>(queryKeys.applications({ page: 2, per_page: 25 }));
 
     // Meta should be preserved
     expect(cached?.meta).toEqual(listMeta);

@@ -34,7 +34,7 @@ export async function applyOptimisticMove(params: {
 
   params.queryClient.setQueryData<ApplicationsResponse>(key, {
     data: applicationStatuses.flatMap((status) => optimistic.columns[status]),
-    meta: previous?.meta
+    meta: previous?.meta ?? { page: 1, per_page: 25, total: 0 }
   });
 
   return { previous };

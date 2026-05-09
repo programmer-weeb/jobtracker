@@ -132,6 +132,19 @@ describe("ApplicationsPage filters", () => {
       search: { status: undefined, q: undefined, tag: undefined, remote: undefined, company: undefined }
     });
   });
+
+  it("resets page to 1 when filters change", async () => {
+    useSearchMock.mockReturnValue({ status: "applied", page: 3 });
+    renderPage();
+    await screen.findByText("Backend Engineer");
+
+    fireEvent.change(screen.getByLabelText("Filter by status"), { target: { value: "interview" } });
+    
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/applications",
+      search: expect.objectContaining({ page: undefined })
+    }));
+  });
 });
 
 describe("ApplicationsPage pagination", () => {
