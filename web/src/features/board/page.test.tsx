@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, act, cleanup } from "@testing-library/react";
+import { render, screen, act, cleanup, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { BoardPage } from "./page";
 import { applyOptimisticMove, rollbackOptimisticMove } from "./optimistic";
@@ -10,10 +10,15 @@ const mutateSpy = vi.fn();
 const navigateMock = vi.fn();
 const useSearchMock = vi.fn();
 let dragEndHandler: ((event: DragEndLike) => void) | undefined;
+let dragStartHandler: ((event: DragStartLike) => void) | undefined;
+
+type DragStartLike = {
+  active: { id: string | number };
+};
 
 type DragEndLike = {
   active: { data: { current: { type: string; applicationId: number; status: Application["status"] } } };
-  over: { data: { current: { type: string; status: Application["status"] } } } | null;
+  over: { data: { current: { type: string; applicationId?: number; status: Application["status"] } } } | null;
 };
 
 vi.mock("@tanstack/react-router", async () => {
@@ -28,8 +33,9 @@ vi.mock("@tanstack/react-router", async () => {
 vi.mock("@dnd-kit/core", async () => {
   const React = await import("react");
   return {
-    DndContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd?: (event: DragEndLike) => void }) => {
+    DndContext: ({ children, onDragEnd, onDragStart }: { children: React.ReactNode; onDragEnd?: (event: DragEndLike) => void; onDragStart?: (event: DragStartLike) => void }) => {
       dragEndHandler = onDragEnd;
+      dragStartHandler = onDragStart;
       return React.createElement("div", null, children);
     },
     DragOverlay: ({ children }: { children: React.ReactNode }) => React.createElement("div", null, children),
@@ -66,11 +72,15 @@ vi.mock("@dnd-kit/sortable", async () => {
 });
 
 let useApplicationsData: ApplicationsResponse & { meta?: { page: number; per_page: number; total: number } } | undefined;
+let useApplicationsIsLoading = false;
+let useApplicationsIsError = false;
+let useApplicationsError: Error | null = null;
 
 vi.mock("../applications/hooks", () => ({
   useApplications: () => ({
-    isLoading: false,
-    isError: false,
+    isLoading: useApplicationsIsLoading,
+    isError: useApplicationsIsError,
+    error: useApplicationsError,
     data: useApplicationsData || {
       data: [
         { id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } },
@@ -95,6 +105,9 @@ beforeEach(() => {
   navigateMock.mockClear();
   useSearchMock.mockReturnValue({});
   useApplicationsData = undefined;
+  useApplicationsIsLoading = false;
+  useApplicationsIsError = false;
+  useApplicationsError = null;
 });
 
 afterEach(() => {
@@ -157,6 +170,83 @@ describe("BoardPage", () => {
     };
     renderWithClient();
     expect(screen.queryByText("Board shows newest 100 applications. Use the table for the full list.")).not.toBeInTheDocument();
+  });
+
+  it("renders loading state", () => {
+    useApplicationsIsLoading = true;
+    renderWithClient();
+    expect(screen.getByText("Loading board...")).toBeInTheDocument();
+  });
+
+  it("renders error state", () => {
+    useApplicationsIsError = true;
+    useApplicationsError = new Error("Network error");
+    renderWithClient();
+    expect(screen.getByText("Failed to load board: Network error")).toBeInTheDocument();
+  });
+
+  it("filter onChange calls navigate with page cleared", () => {
+    renderWithClient();
+    fireEvent.change(screen.getByLabelText("Filter by status"), { target: { value: "applied" } });
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({ to: "/board" }));
+  });
+
+  it("search input change calls navigate after debounce", () => {
+    vi.useFakeTimers();
+    renderWithClient();
+    fireEvent.change(screen.getByLabelText("Search applications"), { target: { value: "engineer" } });
+    expect(navigateMock).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({ to: "/board" }));
+    vi.useRealTimers();
+  });
+
+  it("empty search trims to undefined and navigates", () => {
+    vi.useFakeTimers();
+    renderWithClient();
+    fireEvent.change(screen.getByLabelText("Search applications"), { target: { value: "   " } });
+    vi.runAllTimers();
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({ to: "/board" }));
+    vi.useRealTimers();
+  });
+
+  it("reset button calls navigate with empty filters", () => {
+    renderWithClient();
+    fireEvent.click(screen.getByText("Reset filters"));
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({ to: "/board" }));
+  });
+
+  it("DragOverlay renders active card after drag start", () => {
+    renderWithClient();
+    expect(screen.getAllByText("Backend Engineer")).toHaveLength(1);
+
+    act(() => {
+      dragStartHandler?.({ active: { id: "card:1" } });
+    });
+
+    expect(screen.getAllByText("Backend Engineer")).toHaveLength(2);
+  });
+
+  it("dragEnd with no over target is a no-op", () => {
+    renderWithClient();
+    act(() => {
+      dragEndHandler?.({
+        active: { data: { current: { type: "card", applicationId: 1, status: "applied" } } },
+        over: null
+      });
+    });
+    expect(mutateSpy).not.toHaveBeenCalled();
+  });
+
+  it("dragEnd no-op when card dropped on same position", () => {
+    renderWithClient();
+    act(() => {
+      dragEndHandler?.({
+        active: { data: { current: { type: "card", applicationId: 1, status: "applied" } } },
+        over: { data: { current: { type: "card", applicationId: 1, status: "applied" } } }
+      });
+    });
+    expect(mutateSpy).not.toHaveBeenCalled();
   });
 });
 
