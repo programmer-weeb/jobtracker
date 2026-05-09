@@ -1,12 +1,17 @@
+@import "tailwindcss";
+
 :root {
-  font-family: "Space Grotesk", "Segoe UI", sans-serif;
-  line-height: 1.4;
-  font-weight: 400;
-  color: #101828;
-  background:
-    radial-gradient(circle at 10% 0%, #c7f9cc 0%, transparent 35%),
-    radial-gradient(circle at 90% 0%, #fde68a 0%, transparent 30%),
-    #f8fafc;
+  --app-bg: #f6f8fb;
+  --foreground: #0f172a;
+  --muted-foreground: #475569;
+  --border: #dbe3ef;
+  --surface-soft: #f1f5f9;
+  --surface-muted: #e2e8f0;
+  --brand-50: #e0f2fe;
+  --brand-600: #0284c7;
+  --brand-700: #0369a1;
+  --ring: #0ea5e9;
+  --danger: #dc2626;
 }
 
 * {
@@ -16,23 +21,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-}
-
-.app-shell {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 2rem 1rem 3rem;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
-}
-
-.app-main {
-  margin-top: 1.5rem;
-  padding: 1.2rem;
-  border: 1px solid #d0d5dd;
-  border-radius: 0.9rem;
-  background: #ffffffdd;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: var(--foreground);
+  background:
+    radial-gradient(circle at 10% 0%, #d8f3dc 0%, transparent 35%),
+    radial-gradient(circle at 90% 0%, #ffedd5 0%, transparent 30%),
+    var(--app-bg);
 }

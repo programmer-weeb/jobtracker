@@ -1,14 +1,12 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 
-export const rootRoute = createRootRoute({
-  component: () => (
-    <div className="app-shell">
-      <header className="app-header">
-        <h1>Job Application Tracker</h1>
-      </header>
-      <main className="app-main">
-        <Outlet />
-      </main>
-    </div>
-  )
+export interface RouterContext {
+  auth: {
+    hydrated: boolean;
+    isAuthenticated: boolean;
+  };
+}
+
+export const rootRoute = createRootRouteWithContext<RouterContext>()({
+  component: () => <Outlet />
 });
