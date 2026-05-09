@@ -43,7 +43,8 @@ function syncApplicationInCaches(
     }
 
     queryClient.setQueryData<ApplicationsResponse>(key, {
-      data: value.data.map((item) => (item.id === application.id ? { ...item, ...application } : item))
+      data: value.data.map((item) => (item.id === application.id ? { ...item, ...application } : item)),
+      meta: value.meta
     });
   }
 }

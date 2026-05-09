@@ -108,4 +108,27 @@ describe("Application Hooks", () => {
     // Invalidation should be called to fetch events
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.applicationDetail(42) });
   });
+
+  it("optimistic update preserves pagination meta when updating application in list", async () => {
+    const listMeta = { page: 2, per_page: 25, total: 50 };
+    const initialListData = {
+      data: [baseApplication],
+      meta: listMeta
+    };
+    queryClient.setQueryData(queryKeys.applications({ page: 2, per_page: 25 }), initialListData);
+
+    updateApplicationMock.mockResolvedValueOnce({ data: { ...baseApplication, title: "Senior Backend Engineer", notes: undefined, events: undefined } });
+
+    const { result } = renderHook(() => useUpdateApplication(), { wrapper });
+
+    result.current.mutate({ id: 42, application: { title: "Senior Backend Engineer" } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const cached = queryClient.getQueryData(queryKeys.applications({ page: 2, per_page: 25 })) as any;
+
+    // Meta should be preserved
+    expect(cached?.meta).toEqual(listMeta);
+    expect(cached?.data[0].title).toBe("Senior Backend Engineer");
+  });
 });
