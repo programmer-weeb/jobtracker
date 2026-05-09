@@ -17,4 +17,15 @@ class Application < ApplicationRecord
   }, default: :wishlist
 
   validates :title, presence: true
+
+  before_save :stamp_applied_at
+
+  private
+
+  def stamp_applied_at
+    return if applied_at.present?
+    return unless status == "applied" && status_changed?
+
+    self.applied_at = Time.current
+  end
 end

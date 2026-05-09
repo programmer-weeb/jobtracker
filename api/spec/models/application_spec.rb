@@ -22,4 +22,43 @@ RSpec.describe Application, type: :model do
         .with_values(wishlist: 0, applied: 1, interview: 2, offer: 3, rejected: 4, archived: 5)
     end
   end
+
+  describe "stamp_applied_at callback" do
+    it "sets applied_at when transitioning to applied status" do
+      application = build(:application, status: :wishlist, applied_at: nil)
+
+      application.status = :applied
+      application.save!
+
+      expect(application.applied_at).to be_present
+    end
+
+    it "does not overwrite applied_at if already set" do
+      existing_time = 1.day.ago
+      application = create(:application, status: :wishlist, applied_at: existing_time)
+
+      application.update!(status: :applied)
+
+      expect(application.reload.applied_at.to_i).to eq(existing_time.to_i)
+    end
+
+    it "does not set applied_at on non-applied status changes" do
+      application = create(:application, status: :wishlist)
+      application.update_column(:applied_at, nil)
+
+      application.update!(status: :rejected)
+
+      expect(application.reload.applied_at).to be_nil
+    end
+
+    it "does not set applied_at if status doesn't change to applied" do
+      application = build(:application, status: :wishlist)
+      application.applied_at = nil
+      application.save!
+
+      application.update!(title: "Updated")
+
+      expect(application.reload.applied_at).to be_nil
+    end
+  end
 end
