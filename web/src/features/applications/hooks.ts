@@ -1,27 +1,30 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { http } from "../../lib/http";
+import type { UseMutationOptions } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/query-keys";
+import { fetchApplications, moveApplication, type ApplicationsFilters } from "./api";
+import type { Application, ApplicationStatus } from "./model";
 
-export interface ApplicationsFilters extends Record<string, string | number | boolean | undefined> {
-  status?: string;
-  q?: string;
-}
+export type { ApplicationsFilters };
 
 export function useApplications(filters: ApplicationsFilters = {}) {
   return useQuery({
     queryKey: queryKeys.applications(filters),
-    queryFn: async () => {
-      const { data } = await http.get("/applications", { params: filters });
-      return data;
-    }
+    queryFn: () => fetchApplications(filters)
   });
 }
 
-export function useMoveApplication() {
+export interface MoveApplicationVariables {
+  id: number;
+  status: ApplicationStatus;
+  position: number;
+  fromStatus: ApplicationStatus;
+}
+
+export function useMoveApplication(
+  options?: UseMutationOptions<Application, Error, MoveApplicationVariables, { previous?: import("./model").ApplicationsResponse }>
+) {
   return useMutation({
-    mutationFn: async (input: { id: number; status: string; position: number }) => {
-      const { data } = await http.patch(`/applications/${input.id}/move`, input);
-      return data;
-    }
+    mutationFn: ({ id, status, position }) => moveApplication({ id, status, position }),
+    ...options
   });
 }
