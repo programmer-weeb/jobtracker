@@ -168,7 +168,8 @@ describe("optimistic behavior", () => {
       data: [
         { id: 1, title: "A", status: "applied", position: 0, company: { name: "Acme" } } as Application,
         { id: 2, title: "B", status: "interview", position: 0, company: { name: "Beta" } } as Application
-      ]
+      ],
+      meta: { page: 1, per_page: 100, total: 2 }
     };
 
     queryClient.setQueryData(queryKeys.applications({}), initial);
@@ -185,6 +186,36 @@ describe("optimistic behavior", () => {
     rollbackOptimisticMove(queryClient, context.previous);
 
     const rolledBack = queryClient.getQueryData<ApplicationsResponse>(queryKeys.applications({}));
+    expect(rolledBack).toEqual(initial);
+  });
+
+  it("optimistic move dispatches against per_page: 100 query key", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const boardKey = queryKeys.applications({ per_page: 100 });
+
+    const initial: ApplicationsResponse = {
+      data: [
+        { id: 1, title: "A", status: "applied", position: 0, company: { name: "Acme" } } as Application,
+        { id: 2, title: "B", status: "interview", position: 0, company: { name: "Beta" } } as Application
+      ],
+      meta: { page: 1, per_page: 100, total: 2 }
+    };
+
+    queryClient.setQueryData(boardKey, initial);
+
+    const context = await applyOptimisticMove({
+      queryClient,
+      input: { id: 1, status: "interview", position: 1 },
+      fromStatus: "applied",
+      queryKey: boardKey
+    });
+
+    const optimistic = queryClient.getQueryData<ApplicationsResponse>(boardKey);
+    expect(optimistic?.data.find((item) => item.id === 1)?.status).toBe("interview");
+
+    rollbackOptimisticMove(queryClient, context.previous, boardKey);
+
+    const rolledBack = queryClient.getQueryData<ApplicationsResponse>(boardKey);
     expect(rolledBack).toEqual(initial);
   });
 });

@@ -33,7 +33,8 @@ export async function applyOptimisticMove(params: {
   const optimistic = applyBoardMove(boardBefore, move);
 
   params.queryClient.setQueryData<ApplicationsResponse>(key, {
-    data: applicationStatuses.flatMap((status) => optimistic.columns[status])
+    data: applicationStatuses.flatMap((status) => optimistic.columns[status]),
+    meta: previous?.meta
   });
 
   return { previous };
