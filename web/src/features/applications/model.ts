@@ -54,8 +54,15 @@ export interface Application {
   events?: ApplicationEvent[];
 }
 
+export interface PaginationMeta {
+  page: number;
+  per_page: number;
+  total: number;
+}
+
 export interface ApplicationsResponse {
   data: Application[];
+  meta: PaginationMeta;
 }
 
 export interface ApplicationResponse {

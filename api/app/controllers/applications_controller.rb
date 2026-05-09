@@ -10,8 +10,15 @@ class ApplicationsController < ApplicationController
 
   def index
     applications = filtered_applications
+    page = [(normalized_integer_param(params[:page]) || 1), 1].max
+    per_page = [[normalized_integer_param(params[:per_page]) || 25, 1].max, 100].min
+    total = applications.count
+
+    paginated = applications.offset((page - 1) * per_page).limit(per_page)
+
     render json: {
-      data: applications.map { |application| application_payload(application) }
+      data: paginated.map { |application| application_payload(application) },
+      meta: { page:, per_page:, total: }
     }, status: :ok
   end
 

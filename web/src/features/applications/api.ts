@@ -13,6 +13,8 @@ export interface ApplicationsFilters extends Record<string, string | number | bo
   tag?: number;
   remote?: boolean;
   company?: number;
+  page?: number;
+  per_page?: number;
 }
 
 export interface MoveApplicationInput {

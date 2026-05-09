@@ -144,6 +144,52 @@ RSpec.describe "Applications", type: :request do
       get "/applications?q=openai", headers: headers, as: :json
       expect(JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }).to include(company_name_match.id)
     end
+
+    it "paginates results with default page=1, per_page=25" do
+      create_list(:application, 30, user: user, company: company)
+
+      get "/applications", headers: headers, as: :json
+
+      response_body = JSON.parse(response.body)
+      expect(response_body.fetch("data").size).to eq(25)
+      expect(response_body.fetch("meta")).to eq({
+        "page" => 1,
+        "per_page" => 25,
+        "total" => 30
+      })
+    end
+
+    it "respects page and per_page parameters" do
+      create_list(:application, 30, user: user, company: company)
+
+      get "/applications?page=2&per_page=10", headers: headers, as: :json
+
+      response_body = JSON.parse(response.body)
+      expect(response_body.fetch("data").size).to eq(10)
+      expect(response_body.fetch("meta")).to eq({
+        "page" => 2,
+        "per_page" => 10,
+        "total" => 30
+      })
+    end
+
+    it "caps per_page at 100" do
+      create_list(:application, 30, user: user, company: company)
+
+      get "/applications?per_page=200", headers: headers, as: :json
+
+      response_body = JSON.parse(response.body)
+      expect(response_body.fetch("meta").fetch("per_page")).to eq(100)
+    end
+
+    it "clamps page to minimum 1" do
+      create_list(:application, 30, user: user, company: company)
+
+      get "/applications?page=0", headers: headers, as: :json
+
+      response_body = JSON.parse(response.body)
+      expect(response_body.fetch("meta").fetch("page")).to eq(1)
+    end
   end
 
   describe "POST /applications" do
