@@ -1,6 +1,12 @@
 # Job Application Tracker
 
+Visual job application tracker with kanban board, built as a portfolio piece.
+
 Monorepo for portfolio project: Rails API + React frontend for tracking job applications with kanban workflow.
+
+## Why I built this
+
+I was applying to engineering roles in 2026 and wanted a single place to track applications, interviews, and notes — built it as a portfolio piece showcasing a Rails 8 API with full RSpec coverage and a React 19 + TanStack Query frontend with optimistic kanban drag-drop.
 
 ## Structure
 
@@ -10,6 +16,22 @@ Monorepo for portfolio project: Rails API + React frontend for tracking job appl
 ├── web/    # React + Vite + TypeScript
 └── plan.md
 ```
+
+## Architecture
+
+```
+┌────────────┐    HTTPS/JWT     ┌──────────────┐
+│ React 19   │ ───────────────▶ │  Rails 8 API │
+│ TanStack   │                  │  Devise+JWT  │
+│ + dnd-kit  │ ◀─────────────── │  Pundit      │
+└────────────┘     JSON         └──────┬───────┘
+                                       │
+                                ┌──────▼───────┐
+                                │ PostgreSQL   │
+                                └──────────────┘
+```
+
+<!-- TODO: hero GIF of kanban drag -->
 
 ## Quick Start
 
