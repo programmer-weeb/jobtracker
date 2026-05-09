@@ -12,6 +12,13 @@ const useSearchMock = vi.fn();
 let dragEndHandler: ((event: DragEndLike) => void) | undefined;
 let dragStartHandler: ((event: DragStartLike) => void) | undefined;
 
+type CapturedMoveOptions = {
+  onMutate?: (input: { id: number; status: Application["status"]; position: number; fromStatus: Application["status"] }) => Promise<{ previous?: ApplicationsResponse }>;
+  onError?: (err: Error, input: unknown, context: { previous?: ApplicationsResponse } | undefined) => void;
+  onSettled?: () => void;
+};
+let capturedMoveOptions: CapturedMoveOptions | undefined;
+
 type DragStartLike = {
   active: { id: string | number };
 };
@@ -90,7 +97,10 @@ vi.mock("../applications/hooks", () => ({
     }
   }),
   useTags: () => ({ data: { data: [{ id: 1, name: "urgent", color: "#f00" }] } }),
-  useMoveApplication: () => ({ mutate: mutateSpy })
+  useMoveApplication: (options: unknown) => {
+    capturedMoveOptions = options as CapturedMoveOptions;
+    return { mutate: mutateSpy };
+  }
 }));
 
 vi.mock("../companies/hooks", () => ({
@@ -108,6 +118,7 @@ beforeEach(() => {
   useApplicationsIsLoading = false;
   useApplicationsIsError = false;
   useApplicationsError = null;
+  capturedMoveOptions = undefined;
 });
 
 afterEach(() => {
@@ -115,16 +126,17 @@ afterEach(() => {
 });
 
 describe("BoardPage", () => {
-  const renderWithClient = () => {
-    const client = new QueryClient({
+  const renderWithClient = (client?: QueryClient) => {
+    const qc = client ?? new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
     });
 
-    return render(
-      <QueryClientProvider client={client}>
+    render(
+      <QueryClientProvider client={qc}>
         <BoardPage />
       </QueryClientProvider>
     );
+    return qc;
   };
 
   it("renders grouped columns smoke test", () => {
@@ -247,6 +259,53 @@ describe("BoardPage", () => {
       });
     });
     expect(mutateSpy).not.toHaveBeenCalled();
+  });
+
+  it("onMutate updates query cache optimistically", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const boardKey = queryKeys.applications({ per_page: 100 });
+    const initial: ApplicationsResponse = {
+      data: [
+        { id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } } as Application,
+        { id: 2, title: "Frontend Engineer", status: "interview", position: 0, company: { name: "Beta" } } as Application
+      ],
+      meta: { page: 1, per_page: 100, total: 2 }
+    };
+    qc.setQueryData(boardKey, initial);
+    renderWithClient(qc);
+
+    await capturedMoveOptions?.onMutate?.({ id: 1, status: "interview", position: 1, fromStatus: "applied" });
+
+    const cached = qc.getQueryData<ApplicationsResponse>(boardKey);
+    expect(cached?.data.find((item) => item.id === 1)?.status).toBe("interview");
+  });
+
+  it("onError rolls back query cache", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const boardKey = queryKeys.applications({ per_page: 100 });
+    const initial: ApplicationsResponse = {
+      data: [
+        { id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } } as Application,
+        { id: 2, title: "Frontend Engineer", status: "interview", position: 0, company: { name: "Beta" } } as Application
+      ],
+      meta: { page: 1, per_page: 100, total: 2 }
+    };
+    qc.setQueryData(boardKey, initial);
+    renderWithClient(qc);
+
+    const context = await capturedMoveOptions?.onMutate?.({ id: 1, status: "interview", position: 1, fromStatus: "applied" });
+    capturedMoveOptions?.onError?.(new Error("boom"), { id: 1, status: "interview", position: 1, fromStatus: "applied" }, context);
+
+    const rolledBack = qc.getQueryData<ApplicationsResponse>(boardKey);
+    expect(rolledBack).toEqual(initial);
+  });
+
+  it("onSettled calls invalidateQueries with active query key", () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    renderWithClient(qc);
+    const spy = vi.spyOn(qc, "invalidateQueries");
+    capturedMoveOptions?.onSettled?.();
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.applications({ per_page: 100 }), exact: true });
   });
 });
 
