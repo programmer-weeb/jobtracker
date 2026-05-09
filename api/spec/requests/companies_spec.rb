@@ -47,5 +47,13 @@ RSpec.describe "Companies", type: :request do
       expect(response).to have_http_status(:no_content)
       expect(Company.exists?(company.id)).to be(false)
     end
+
+    it "does not delete another user's company" do
+      other_company = create(:company)
+
+      delete "/companies/#{other_company.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end

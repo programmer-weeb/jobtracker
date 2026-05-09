@@ -23,5 +23,16 @@ RSpec.describe "Notes", type: :request do
       expect(response).to have_http_status(:no_content)
       expect(Note.exists?(note.id)).to be(false)
     end
+
+    it "does not delete another user's note" do
+      other_user = create(:user)
+      other_company = create(:company, user: other_user)
+      other_application = create(:application, user: other_user, company: other_company)
+      other_note = create(:note, application: other_application)
+
+      delete "/notes/#{other_note.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end

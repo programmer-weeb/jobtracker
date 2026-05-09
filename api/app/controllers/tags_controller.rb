@@ -3,12 +3,14 @@ class TagsController < ApplicationController
   before_action :set_tag, only: :destroy
 
   def index
-    tags = current_user.tags.order(:name)
+    tags = policy_scope(Tag).order(:name)
+    authorize Tag
     render json: { data: tags.as_json(only: %i[id name color user_id created_at updated_at]) }, status: :ok
   end
 
   def create
     tag = current_user.tags.new(tag_params)
+    authorize tag
     if tag.save
       render json: { data: tag.as_json(only: %i[id name color user_id created_at updated_at]) }, status: :created
     else
@@ -17,6 +19,7 @@ class TagsController < ApplicationController
   end
 
   def destroy
+    authorize @tag
     @tag.destroy!
     head :no_content
   end
@@ -24,7 +27,7 @@ class TagsController < ApplicationController
   private
 
   def set_tag
-    @tag = current_user.tags.find(params[:id])
+    @tag = policy_scope(Tag).find(params[:id])
   end
 
   def tag_params

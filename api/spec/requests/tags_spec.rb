@@ -36,5 +36,13 @@ RSpec.describe "Tags", type: :request do
       expect(response).to have_http_status(:no_content)
       expect(Tag.exists?(tag.id)).to be(false)
     end
+
+    it "does not delete another user's tag" do
+      other_tag = create(:tag)
+
+      delete "/tags/#{other_tag.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end
