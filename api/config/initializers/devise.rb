@@ -286,6 +286,7 @@ Devise.setup do |config|
   # end
   config.jwt do |jwt|
     jwt.secret = ENV.fetch("DEVISE_JWT_SECRET_KEY") { Rails.application.secret_key_base }
+    jwt.expiration_time = 1.day.to_i
     jwt.dispatch_requests = [
       ["POST", %r{^/auth/login$}],
       ["POST", %r{^/auth/signup$}]
