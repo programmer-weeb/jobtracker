@@ -13,7 +13,7 @@ describe("application filter normalization", () => {
         unknown: "value",
         badTag: "xx"
       })
-    ).toEqual({ status: "applied", q: "rails", tag: 5, company: 2, remote: false });
+    ).toEqual({ status: "applied", q: "rails", tag: 5, company: 2, remote: false, page: undefined, per_page: undefined });
   });
 
   it("parses remote true/false and invalid as undefined", () => {
@@ -28,7 +28,45 @@ describe("application filter normalization", () => {
       q: "x",
       tag: 1,
       remote: true,
-      company: 7
+      company: 7,
+      page: undefined,
+      per_page: undefined
+    });
+  });
+
+  describe("pagination round-trip", () => {
+    it("round-trips page and per_page through normalize and toSearch", () => {
+      const search = { page: "2", per_page: "50" };
+      const normalized = normalizeFiltersFromSearch(search);
+      const result = toSearchFilters(normalized);
+
+      expect(result).toEqual(expect.objectContaining({
+        page: 2,
+        per_page: 50
+      }));
+    });
+
+    it("discards non-positive page values", () => {
+      const normalized1 = normalizeFiltersFromSearch({ page: "0" });
+      const normalized2 = normalizeFiltersFromSearch({ page: "-1" });
+
+      expect(normalized1.page).toBeUndefined();
+      expect(normalized2.page).toBeUndefined();
+    });
+
+    it("discards non-positive per_page values", () => {
+      const normalized1 = normalizeFiltersFromSearch({ per_page: "0" });
+      const normalized2 = normalizeFiltersFromSearch({ per_page: "-5" });
+
+      expect(normalized1.per_page).toBeUndefined();
+      expect(normalized2.per_page).toBeUndefined();
+    });
+
+    it("ignores non-numeric page and per_page", () => {
+      const normalized = normalizeFiltersFromSearch({ page: "abc", per_page: "xyz" });
+
+      expect(normalized.page).toBeUndefined();
+      expect(normalized.per_page).toBeUndefined();
     });
   });
 });

@@ -19,12 +19,17 @@ export function normalizeFiltersFromSearch(search: Record<string, unknown>): App
   const q = typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined;
   const remote = search.remote === "true" ? true : search.remote === "false" ? false : undefined;
 
+  const page = parseNumber(search.page);
+  const per_page = parseNumber(search.per_page);
+
   return {
     status,
     q,
     tag: parseNumber(search.tag),
     company: parseNumber(search.company),
-    remote
+    remote,
+    page: page !== undefined && page > 0 ? page : undefined,
+    per_page: per_page !== undefined && per_page > 0 ? per_page : undefined
   };
 }
 
