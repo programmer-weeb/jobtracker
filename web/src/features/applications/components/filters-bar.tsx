@@ -10,6 +10,7 @@ interface FiltersBarProps {
   companies: CompanySummary[];
   tags: TagSummary[];
   onChange: (next: ApplicationFiltersState) => void;
+  onSearchChange: (value: string) => void;
   onReset: () => void;
 }
 
@@ -18,14 +19,14 @@ function toSelectValue(value: string | number | undefined) {
 }
 
 export function ApplicationsFiltersBar(props: FiltersBarProps) {
-  const { filters, companies, tags, onChange, onReset } = props;
+  const { filters, companies, tags, onChange, onSearchChange, onReset } = props;
 
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
       <Input
         placeholder="Search title, company, source"
         value={filters.q ?? ""}
-        onChange={(event) => onChange({ ...filters, q: event.target.value || undefined })}
+        onChange={(event) => onSearchChange(event.target.value)}
         aria-label="Search applications"
         className="xl:col-span-2"
       />
@@ -89,7 +90,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
         <option value="false">Onsite only</option>
       </select>
 
-      <Button variant="secondary" onClick={onReset}>
+      <Button variant="secondary" onClick={onReset} className="w-full md:w-auto">
         Reset filters
       </Button>
     </div>

@@ -1,35 +1,18 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Card } from "../../components/ui/card";
 import { useCompanies } from "../companies/hooks";
 import { applicationsRoute } from "../../routes/applications";
 import { ApplicationsFiltersBar, type ApplicationFiltersState } from "./components/filters-bar";
+import { toSearchFilters } from "./filters";
 import { useApplications, useTags } from "./hooks";
-import type { ApplicationStatus } from "./model";
-
-function buildFilters(search: {
-  status?: ApplicationStatus;
-  q?: string;
-  tag?: number;
-  remote?: boolean;
-  company?: number;
-}): ApplicationFiltersState {
-  const filters: ApplicationFiltersState = {};
-
-  if (search.status) filters.status = search.status;
-  if (search.q) filters.q = search.q;
-  if (search.tag !== undefined) filters.tag = search.tag;
-  if (search.remote !== undefined) filters.remote = search.remote;
-  if (search.company !== undefined) filters.company = search.company;
-
-  return filters;
-}
 
 export function ApplicationsPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: applicationsRoute.id });
 
-  const filters = useMemo(() => buildFilters(search), [search]);
+  const searchDebounceRef = useRef<number | null>(null);
+  const filters = useMemo(() => ({ ...search }) as ApplicationFiltersState, [search]);
 
   const { data, isLoading, isError, error } = useApplications(filters);
   const { data: tagsResponse } = useTags();
@@ -48,6 +31,15 @@ export function ApplicationsPage() {
     [companiesResponse]
   );
 
+  useEffect(
+    () => () => {
+      if (searchDebounceRef.current !== null) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+    },
+    []
+  );
+
   return (
     <div className="space-y-4">
       <Card className="p-4">
@@ -58,19 +50,25 @@ export function ApplicationsPage() {
           onChange={(next) => {
             void navigate({
               to: "/applications",
-              search: {
-                status: next.status,
-                q: next.q,
-                tag: next.tag,
-                remote: next.remote,
-                company: next.company
-              }
+              search: toSearchFilters(next)
             });
+          }}
+          onSearchChange={(value) => {
+            if (searchDebounceRef.current !== null) {
+              window.clearTimeout(searchDebounceRef.current);
+            }
+
+            searchDebounceRef.current = window.setTimeout(() => {
+              void navigate({
+                to: "/applications",
+                search: toSearchFilters({ ...filters, q: value.trim() || undefined })
+              });
+            }, 300);
           }}
           onReset={() => {
             void navigate({
               to: "/applications",
-              search: { status: undefined, q: undefined, tag: undefined, remote: undefined, company: undefined }
+              search: toSearchFilters({})
             });
           }}
         />

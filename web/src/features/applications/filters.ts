@@ -1,0 +1,40 @@
+import { applicationStatuses, type ApplicationStatus } from "./model";
+import type { ApplicationsFilters } from "./api";
+
+const statuses = new Set<ApplicationStatus>(applicationStatuses);
+
+function parseNumber(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+export function normalizeFiltersFromSearch(search: Record<string, unknown>): ApplicationsFilters {
+  const status = typeof search.status === "string" && statuses.has(search.status as ApplicationStatus)
+    ? (search.status as ApplicationStatus)
+    : undefined;
+  const q = typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined;
+  const remote = search.remote === "true" ? true : search.remote === "false" ? false : undefined;
+
+  return {
+    status,
+    q,
+    tag: parseNumber(search.tag),
+    company: parseNumber(search.company),
+    remote
+  };
+}
+
+export function toSearchFilters(filters: ApplicationsFilters) {
+  return {
+    status: filters.status,
+    q: filters.q,
+    tag: filters.tag,
+    remote: filters.remote,
+    company: filters.company
+  };
+}
+

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   closestCorners,
   DndContext,
@@ -13,8 +14,13 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/query-keys";
-import { useApplications, useMoveApplication } from "../applications/hooks";
+import { boardRoute } from "../../routes/board";
+import { useCompanies } from "../companies/hooks";
+import { Card } from "../../components/ui/card";
+import { useApplications, useMoveApplication, useTags, type ApplicationsFilters } from "../applications/hooks";
 import { applicationStatuses, type ApplicationStatus, type ApplicationsResponse } from "../applications/model";
+import { ApplicationsFiltersBar } from "../applications/components/filters-bar";
+import { toSearchFilters } from "../applications/filters";
 import { parseCardId, resolveDragMove } from "./dnd";
 import { applyOptimisticMove, rollbackOptimisticMove } from "./optimistic";
 import { toBoardColumns } from "./model";
@@ -31,11 +37,30 @@ const boardTitles: Record<ApplicationStatus, string> = {
 };
 
 export function BoardPage() {
+  const navigate = useNavigate();
+  const search = useSearch({ from: boardRoute.id });
+  const searchDebounceRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, error } = useApplications();
+  const filters = useMemo(() => ({ ...search }) as ApplicationsFilters, [search]);
+  const normalizedFilters = useMemo(() => toSearchFilters(filters), [filters]);
+  const activeQueryKey = useMemo(() => queryKeys.applications(normalizedFilters), [normalizedFilters]);
+  const { data, isLoading, isError, error } = useApplications(filters);
+  const { data: tagsResponse } = useTags();
+  const { data: companiesResponse } = useCompanies();
   const [activeCardId, setActiveCardId] = useState<number | null>(null);
 
   const columns = useMemo(() => toBoardColumns(data), [data]);
+  const tags = tagsResponse?.data ?? [];
+  const companies = useMemo(
+    () =>
+      (companiesResponse?.data ?? []).map((company) => ({
+        id: company.id,
+        name: company.name,
+        website: company.website,
+        location: company.location
+      })),
+    [companiesResponse]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -47,15 +72,25 @@ export function BoardPage() {
       applyOptimisticMove({
         queryClient,
         input,
-        fromStatus: input.fromStatus
+        fromStatus: input.fromStatus,
+        queryKey: activeQueryKey
       }),
     onError: (_err, _input, context: { previous?: ApplicationsResponse } | undefined) => {
-      rollbackOptimisticMove(queryClient, context?.previous);
+      rollbackOptimisticMove(queryClient, context?.previous, activeQueryKey);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.applications({}) });
+      queryClient.invalidateQueries({ queryKey: activeQueryKey, exact: true });
     }
   });
+
+  useEffect(
+    () => () => {
+      if (searchDebounceRef.current !== null) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+    },
+    []
+  );
 
   if (isLoading) {
     return <p className="text-sm">Loading board...</p>;
@@ -107,18 +142,45 @@ export function BoardPage() {
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {applicationStatuses.map((status) => (
-          <BoardColumn
-            key={status}
-            status={status}
-            title={boardTitles[status]}
-            applications={columns[status]}
-          />
-        ))}
-      </div>
-      <DragOverlay>{activeCard ? <ApplicationCard application={activeCard} status={activeCard.status} isOverlay /> : null}</DragOverlay>
-    </DndContext>
+    <div className="space-y-4">
+      <Card className="p-4">
+        <ApplicationsFiltersBar
+          filters={filters}
+          tags={tags}
+          companies={companies}
+          onChange={(next) => {
+            void navigate({ to: "/board", search: toSearchFilters(next) });
+          }}
+          onSearchChange={(value) => {
+            if (searchDebounceRef.current !== null) {
+              window.clearTimeout(searchDebounceRef.current);
+            }
+
+            searchDebounceRef.current = window.setTimeout(() => {
+              void navigate({
+                to: "/board",
+                search: toSearchFilters({ ...filters, q: value.trim() || undefined })
+              });
+            }, 300);
+          }}
+          onReset={() => {
+            void navigate({ to: "/board", search: toSearchFilters({}) });
+          }}
+        />
+      </Card>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {applicationStatuses.map((status) => (
+            <BoardColumn
+              key={status}
+              status={status}
+              title={boardTitles[status]}
+              applications={columns[status]}
+            />
+          ))}
+        </div>
+        <DragOverlay>{activeCard ? <ApplicationCard application={activeCard} status={activeCard.status} isOverlay /> : null}</DragOverlay>
+      </DndContext>
+    </div>
   );
 }

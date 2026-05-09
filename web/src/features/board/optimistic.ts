@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { QueryKey } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/query-keys";
 import { applicationStatuses, type ApplicationsResponse, type ApplicationStatus } from "../applications/model";
 import { applyBoardMove, type BoardDragMove } from "./dnd";
@@ -14,8 +15,9 @@ export async function applyOptimisticMove(params: {
   queryClient: QueryClient;
   input: BoardMoveInput;
   fromStatus: ApplicationStatus;
+  queryKey?: QueryKey;
 }) {
-  const key = queryKeys.applications({});
+  const key = params.queryKey ?? queryKeys.applications({});
   await params.queryClient.cancelQueries({ queryKey: key });
 
   const previous = params.queryClient.getQueryData<ApplicationsResponse>(key);
@@ -37,9 +39,13 @@ export async function applyOptimisticMove(params: {
   return { previous };
 }
 
-export function rollbackOptimisticMove(queryClient: QueryClient, previous: ApplicationsResponse | undefined) {
+export function rollbackOptimisticMove(
+  queryClient: QueryClient,
+  previous: ApplicationsResponse | undefined,
+  queryKey: QueryKey = queryKeys.applications({})
+) {
   if (!previous) {
     return;
   }
-  queryClient.setQueryData(queryKeys.applications({}), previous);
+  queryClient.setQueryData(queryKey, previous);
 }

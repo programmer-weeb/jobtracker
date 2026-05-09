@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
@@ -37,6 +38,24 @@ function toForm(company: Company): CompanyFormState {
   };
 }
 
+function toErrorMessage(error: unknown, fallback: string) {
+  if (isAxiosError(error)) {
+    const data = error.response?.data as { error?: string; errors?: string[] } | undefined;
+    if (Array.isArray(data?.errors) && data.errors.length > 0) {
+      return data.errors.join(", ");
+    }
+    if (data?.error) {
+      return data.error;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 function CompanyRow(props: {
   company: Company;
   onSave: (id: number, payload: UpsertCompanyPayload) => Promise<void>;
@@ -63,7 +82,7 @@ function CompanyRow(props: {
       await onSave(company.id, toPayload(form));
       setEditing(false);
     } catch (submitError) {
-      setError((submitError as Error).message || "Failed to update company.");
+      setError(toErrorMessage(submitError, "Failed to update company."));
     }
   };
 
@@ -78,7 +97,7 @@ function CompanyRow(props: {
     try {
       await onDelete(company.id);
     } catch (deleteError) {
-      setError((deleteError as Error).message || "Failed to delete company.");
+      setError(toErrorMessage(deleteError, "Failed to delete company."));
     }
   };
 
@@ -158,6 +177,10 @@ export function CompaniesPage() {
 
   const [form, setForm] = useState<CompanyFormState>(emptyForm);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [mutationFeedback, setMutationFeedback] = useState<string | null>(null);
 
   const companies = useMemo(() => data?.data ?? [], [data]);
 
@@ -170,12 +193,14 @@ export function CompaniesPage() {
     }
 
     setCreateError(null);
+    setCreateSuccess(null);
 
     try {
       await createMutation.mutateAsync(toPayload(form));
       setForm(emptyForm);
+      setCreateSuccess("Company added.");
     } catch (submitError) {
-      setCreateError((submitError as Error).message || "Failed to create company.");
+      setCreateError(toErrorMessage(submitError, "Failed to create company."));
     }
   };
 
@@ -195,6 +220,7 @@ export function CompaniesPage() {
           <div className="md:col-span-2 flex items-center gap-2">
             <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? "Creating..." : "Add company"}</Button>
             {createError ? <p className="text-sm text-[var(--danger)]">{createError}</p> : null}
+            {createSuccess ? <p className="text-sm text-[var(--brand-700)]">{createSuccess}</p> : null}
           </div>
         </form>
       </Card>
@@ -224,19 +250,34 @@ export function CompaniesPage() {
                     key={company.id}
                     company={company}
                     onSave={async (id, payload) => {
-                      await updateMutation.mutateAsync({ id, company: payload });
+                      setMutationFeedback(null);
+                      setUpdatingId(id);
+                      try {
+                        await updateMutation.mutateAsync({ id, company: payload });
+                        setMutationFeedback("Company updated.");
+                      } finally {
+                        setUpdatingId(null);
+                      }
                     }}
                     onDelete={async (id) => {
-                      await deleteMutation.mutateAsync(id);
+                      setMutationFeedback(null);
+                      setDeletingId(id);
+                      try {
+                        await deleteMutation.mutateAsync(id);
+                        setMutationFeedback("Company deleted.");
+                      } finally {
+                        setDeletingId(null);
+                      }
                     }}
-                    isUpdating={updateMutation.isPending}
-                    isDeleting={deleteMutation.isPending}
+                    isUpdating={updatingId === company.id && updateMutation.isPending}
+                    isDeleting={deletingId === company.id && deleteMutation.isPending}
                   />
                 ))}
               </tbody>
             </table>
           </div>
         ) : null}
+        {mutationFeedback ? <p className="px-4 pb-4 text-sm text-[var(--brand-700)]">{mutationFeedback}</p> : null}
       </Card>
     </div>
   );
