@@ -1,14 +1,32 @@
 import { http } from "../../lib/http";
 import type { AuthResponse, LoginInput, SignupInput, User } from "./types";
 
+interface AuthApiEnvelope {
+  data: User;
+}
+
 export async function login(input: LoginInput) {
-  const { data } = await http.post<AuthResponse>("/auth/login", { user: input });
-  return data;
+  const response = await http.post<AuthApiEnvelope>("/auth/login", { user: input });
+  const user = response.data.data;
+  const token = response.headers.authorization?.replace(/^Bearer\s+/i, "");
+
+  if (!token) {
+    throw new Error("Missing Authorization token in login response");
+  }
+
+  return { token, user } satisfies AuthResponse;
 }
 
 export async function signup(input: SignupInput) {
-  const { data } = await http.post<AuthResponse>("/auth/signup", { user: input });
-  return data;
+  const response = await http.post<AuthApiEnvelope>("/auth/signup", { user: input });
+  const user = response.data.data;
+  const token = response.headers.authorization?.replace(/^Bearer\s+/i, "");
+
+  if (!token) {
+    throw new Error("Missing Authorization token in signup response");
+  }
+
+  return { token, user } satisfies AuthResponse;
 }
 
 export async function logout() {
@@ -16,6 +34,6 @@ export async function logout() {
 }
 
 export async function me() {
-  const { data } = await http.get<User>("/auth/me");
-  return data;
+  const { data } = await http.get<AuthApiEnvelope>("/auth/me");
+  return data.data;
 }

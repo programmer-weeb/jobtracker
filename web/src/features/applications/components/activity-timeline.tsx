@@ -1,4 +1,4 @@
-import type { Application, Note } from "../model";
+import type { Application, ApplicationEvent } from "../model";
 
 type TimelineItem = {
   id: string;
@@ -6,31 +6,42 @@ type TimelineItem = {
   at: string;
 };
 
-function buildTimeline(application: Application, notes: Note[]): TimelineItem[] {
-  const base: TimelineItem[] = [
-    {
-      id: `status-${application.id}`,
-      label: `Status: ${application.status}`,
-      at: application.updated_at
-    }
-  ];
+function eventLabel(event: ApplicationEvent): string {
+  if (event.kind === "status_changed") {
+    const from = typeof event.payload.from === "string" ? event.payload.from : "unknown";
+    const to = typeof event.payload.to === "string" ? event.payload.to : "unknown";
+    return `Status changed: ${from} -> ${to}`;
+  }
+  if (event.kind === "note_added") {
+    return "Note added";
+  }
+  return "Reminder sent";
+}
 
+function buildTimeline(application: Application): TimelineItem[] {
+  const eventItems = (application.events ?? []).map((event) => ({
+    id: `event-${event.id}`,
+    label: eventLabel(event),
+    at: event.created_at
+  }));
+  const base: TimelineItem[] = [];
   if (application.applied_at) {
     base.push({ id: `applied-${application.id}`, label: "Applied", at: application.applied_at });
   }
 
-  const noteItems = notes.map((note) => ({ id: `note-${note.id}`, label: `Note: ${note.body}`, at: note.created_at }));
-
-  return [...base, ...noteItems].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  return [...eventItems, ...base].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
 
 interface ActivityTimelineProps {
   application: Application;
-  notes: Note[];
 }
 
-export function ActivityTimeline({ application, notes }: ActivityTimelineProps) {
-  const items = buildTimeline(application, notes);
+export function ActivityTimeline({ application }: ActivityTimelineProps) {
+  const items = buildTimeline(application);
+
+  if (items.length === 0) {
+    return <p className="text-sm text-[var(--muted-foreground)]">No activity yet.</p>;
+  }
 
   return (
     <ul className="space-y-2">

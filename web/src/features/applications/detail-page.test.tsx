@@ -47,7 +47,16 @@ const baseApplication: Application = {
   updated_at: "2026-05-02T10:00:00Z",
   company: { id: 2, name: "Acme", website: null, location: null },
   tags: [{ id: 1, name: "urgent", color: "#ff0000" }],
-  notes: [{ id: 10, application_id: 42, body: "Initial note", created_at: "2026-05-03T10:00:00Z", updated_at: "2026-05-03T10:00:00Z" }]
+  notes: [{ id: 10, application_id: 42, body: "Initial note", created_at: "2026-05-03T10:00:00Z", updated_at: "2026-05-03T10:00:00Z" }],
+  events: [
+    {
+      id: 100,
+      kind: "status_changed",
+      payload: { from: "wishlist", to: "applied" },
+      created_at: "2026-05-02T11:00:00Z",
+      updated_at: "2026-05-02T11:00:00Z"
+    }
+  ]
 };
 
 function renderPage() {
@@ -67,8 +76,10 @@ beforeEach(() => {
   fetchApplicationMock.mockResolvedValue({ data: baseApplication });
   fetchTagsMock.mockResolvedValue({ data: [{ id: 1, name: "urgent", color: "#ff0000" }, { id: 2, name: "onsite", color: "#00ff00" }] });
   updateApplicationMock.mockResolvedValue({ data: baseApplication });
-  createNoteMock.mockResolvedValue({
-    data: { id: 11, application_id: 42, body: "Followed up", created_at: "2026-05-04T10:00:00Z", updated_at: "2026-05-04T10:00:00Z" }
+  createNoteMock.mockImplementation((id, body) => {
+    const newNote = { id: 11, application_id: id, body, created_at: "2026-05-04T10:00:00Z", updated_at: "2026-05-04T10:00:00Z" };
+    fetchApplicationMock.mockResolvedValue({ data: { ...baseApplication, notes: [newNote, ...(baseApplication.notes || [])] } });
+    return Promise.resolve({ data: newNote });
   });
   deleteNoteMock.mockResolvedValue({});
   vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -87,6 +98,7 @@ describe("ApplicationDetailPage", () => {
     expect(fetchApplicationMock).toHaveBeenCalledWith(42);
     expect(screen.getByText(/Acme/)).toBeInTheDocument();
     expect(screen.getByText("Initial note")).toBeInTheDocument();
+    expect(screen.getByText("Status changed: wishlist -> applied")).toBeInTheDocument();
   });
 
   it("save mutation sends expected payload", async () => {
@@ -132,5 +144,11 @@ describe("ApplicationDetailPage", () => {
 
     await waitFor(() => expect(updateApplicationMock).toHaveBeenCalled());
     expect(updateApplicationMock.mock.calls[0][0].application.tag_ids).toEqual([1, 2]);
+  });
+
+  it("renders empty timeline state when no events and no applied_at", async () => {
+    fetchApplicationMock.mockResolvedValueOnce({ data: { ...baseApplication, applied_at: null, events: [] } });
+    renderPage();
+    expect(await screen.findByText("No activity yet.")).toBeInTheDocument();
   });
 });
