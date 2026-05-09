@@ -15,4 +15,18 @@ describe("index route", () => {
 
     expect(thrown).toMatchObject({ options: { to: "/login" } });
   });
+
+  it("redirects authenticated users to board", () => {
+    let thrown: unknown;
+
+    try {
+      indexRoute.options.beforeLoad?.({
+        context: { auth: { hydrated: true, isAuthenticated: true } }
+      } as never);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toMatchObject({ options: { to: "/board" } });
+  });
 });
