@@ -285,7 +285,12 @@ Devise.setup do |config|
   #   warden_config.default_strategies(scope: :user).unshift :some_external_strategy
   # end
   config.jwt do |jwt|
-    jwt.secret = ENV.fetch("DEVISE_JWT_SECRET_KEY") { Rails.application.secret_key_base }
+    secret_key = if Rails.env.production?
+      ENV.fetch("DEVISE_JWT_SECRET_KEY") { raise "DEVISE_JWT_SECRET_KEY required in production" }
+    else
+      ENV.fetch("DEVISE_JWT_SECRET_KEY") { Rails.application.secret_key_base }
+    end
+    jwt.secret = secret_key
     jwt.expiration_time = 1.day.to_i
     jwt.dispatch_requests = [
       ["POST", %r{^/auth/login$}],
