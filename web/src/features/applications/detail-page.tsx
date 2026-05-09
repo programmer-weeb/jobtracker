@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useParams } from "@tanstack/react-router";
 import { Card } from "../../components/ui/card";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import {
   sortNotes,
   useApplication,
@@ -17,6 +19,9 @@ import { ActivityTimeline } from "./components/activity-timeline";
 export function ApplicationDetailPage() {
   const { id } = useParams({ from: "/authenticated/applications/$id" });
   const applicationId = Number(id);
+
+  const [deleteNoteDialogOpen, setDeleteNoteDialogOpen] = useState(false);
+  const [pendingNoteId, setPendingNoteId] = useState<number | null>(null);
 
   const detailQuery = useApplication(applicationId);
   const tagsQuery = useTags();
@@ -70,10 +75,8 @@ export function ApplicationDetailPage() {
             notes={notes}
             deletingId={deleteNoteMutation.variables}
             onDelete={(noteId) => {
-              if (!window.confirm("Delete this note?")) {
-                return;
-              }
-              deleteNoteMutation.mutate(noteId);
+              setPendingNoteId(noteId);
+              setDeleteNoteDialogOpen(true);
             }}
           />
           {deleteNoteMutation.isError ? <p className="text-xs text-[var(--danger)]">Could not delete note.</p> : null}
@@ -84,6 +87,26 @@ export function ApplicationDetailPage() {
         <h2 className="text-lg font-semibold">Activity</h2>
         <ActivityTimeline application={application} />
       </Card>
+
+      <ConfirmDialog
+        isOpen={deleteNoteDialogOpen}
+        title="Delete Note"
+        description="This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive
+        isPending={deleteNoteMutation.isPending}
+        onConfirm={() => {
+          if (pendingNoteId) {
+            deleteNoteMutation.mutate(pendingNoteId);
+            setDeleteNoteDialogOpen(false);
+          }
+        }}
+        onCancel={() => {
+          setDeleteNoteDialogOpen(false);
+          setPendingNoteId(null);
+        }}
+      />
     </div>
   );
 }

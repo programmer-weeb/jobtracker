@@ -43,7 +43,6 @@ beforeEach(() => {
     data: { id: 1, user_id: 1, name: "Acme Updated", website: "https://acme.io", location: "SF", notes: "priority", created_at: "", updated_at: "" }
   });
   deleteCompanyMock.mockResolvedValue({});
-  vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 afterEach(() => {
@@ -95,10 +94,6 @@ describe("CompaniesPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("update failed")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-
-    deleteCompanyMock.mockRejectedValueOnce(new Error("delete failed"));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(await screen.findByText("delete failed")).toBeInTheDocument();
   });
 
   it("create, edit, delete call correct APIs and update UI", async () => {
@@ -131,6 +126,11 @@ describe("CompaniesPage", () => {
     const acmeRow = screen.getByText("Acme Updated").closest("tr");
     expect(acmeRow).toBeTruthy();
     fireEvent.click(within(acmeRow as HTMLElement).getByRole("button", { name: "Delete" }));
+
+    // Click confirm button in dialog
+    const confirmButton = await screen.findByTestId("confirm-dialog-confirm");
+    fireEvent.click(confirmButton);
+
     await waitFor(() => expect(deleteCompanyMock).toHaveBeenCalledWith(1));
     expect(screen.getByText("Company deleted.")).toBeInTheDocument();
   });

@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { isAxiosError } from "axios";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { Input } from "../../components/ui/input";
 import { useCompanies, useCreateCompany, useDeleteCompany, useUpdateCompany } from "./hooks";
 import type { Company, UpsertCompanyPayload } from "./model";
@@ -59,7 +60,7 @@ function toErrorMessage(error: unknown, fallback: string) {
 function CompanyRow(props: {
   company: Company;
   onSave: (id: number, payload: UpsertCompanyPayload) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
+  onDelete: (id: number) => void;
   isUpdating: boolean;
   isDeleting: boolean;
 }) {
@@ -86,19 +87,8 @@ function CompanyRow(props: {
     }
   };
 
-  const onRemove = async () => {
-    const confirmed = window.confirm(`Delete ${company.name}?`);
-    if (!confirmed) {
-      return;
-    }
-
-    setError(null);
-
-    try {
-      await onDelete(company.id);
-    } catch (deleteError) {
-      setError(toErrorMessage(deleteError, "Failed to delete company."));
-    }
+  const onRemove = () => {
+    onDelete(company.id);
   };
 
   if (editing) {
@@ -181,6 +171,8 @@ export function CompaniesPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [mutationFeedback, setMutationFeedback] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const companies = useMemo(() => data?.data ?? [], [data]);
 
@@ -259,15 +251,9 @@ export function CompaniesPage() {
                         setUpdatingId(null);
                       }
                     }}
-                    onDelete={async (id) => {
-                      setMutationFeedback(null);
-                      setDeletingId(id);
-                      try {
-                        await deleteMutation.mutateAsync(id);
-                        setMutationFeedback("Company deleted.");
-                      } finally {
-                        setDeletingId(null);
-                      }
+                    onDelete={(id) => {
+                      setPendingDeleteId(id);
+                      setDeleteDialogOpen(true);
                     }}
                     isUpdating={updatingId === company.id && updateMutation.isPending}
                     isDeleting={deletingId === company.id && deleteMutation.isPending}
@@ -279,6 +265,34 @@ export function CompaniesPage() {
         ) : null}
         {mutationFeedback ? <p className="px-4 pb-4 text-sm text-[var(--brand-700)]">{mutationFeedback}</p> : null}
       </Card>
+
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        title="Delete Company"
+        description={pendingDeleteId ? `Are you sure you want to delete "${companies.find(c => c.id === pendingDeleteId)?.name}"? This action cannot be undone.` : ""}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive
+        isPending={pendingDeleteId !== null && deleteMutation.isPending}
+        onConfirm={async () => {
+          if (pendingDeleteId !== null) {
+            setMutationFeedback(null);
+            setDeletingId(pendingDeleteId);
+            try {
+              await deleteMutation.mutateAsync(pendingDeleteId);
+              setMutationFeedback("Company deleted.");
+              setDeleteDialogOpen(false);
+              setPendingDeleteId(null);
+            } finally {
+              setDeletingId(null);
+            }
+          }
+        }}
+        onCancel={() => {
+          setDeleteDialogOpen(false);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }

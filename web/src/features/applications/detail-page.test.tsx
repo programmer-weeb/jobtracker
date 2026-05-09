@@ -82,7 +82,6 @@ beforeEach(() => {
     return Promise.resolve({ data: newNote });
   });
   deleteNoteMock.mockResolvedValue({});
-  vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 afterEach(() => {
@@ -130,6 +129,10 @@ describe("ApplicationDetailPage", () => {
 
     const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
     fireEvent.click(deleteButtons[0]);
+
+    // Click confirm button in dialog
+    const confirmButton = await screen.findByTestId("confirm-dialog-confirm");
+    fireEvent.click(confirmButton);
 
     await waitFor(() => expect(deleteNoteMock).toHaveBeenCalledWith(11));
     await waitFor(() => expect(screen.queryByText("Followed up")).not.toBeInTheDocument());
