@@ -218,4 +218,23 @@ describe("optimistic behavior", () => {
     const rolledBack = queryClient.getQueryData<ApplicationsResponse>(boardKey);
     expect(rolledBack).toEqual(initial);
   });
+
+  it("skips optimistic cache write when query cache is empty and rollback is no-op", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const boardKey = queryKeys.applications({ per_page: 100 });
+
+    const context = await applyOptimisticMove({
+      queryClient,
+      input: { id: 1, status: "interview", position: 1 },
+      fromStatus: "applied",
+      queryKey: boardKey
+    });
+
+    expect(context.previous).toBeUndefined();
+    expect(queryClient.getQueryData<ApplicationsResponse>(boardKey)).toBeUndefined();
+
+    rollbackOptimisticMove(queryClient, context.previous, boardKey);
+
+    expect(queryClient.getQueryData<ApplicationsResponse>(boardKey)).toBeUndefined();
+  });
 });

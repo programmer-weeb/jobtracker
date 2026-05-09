@@ -21,6 +21,9 @@ export async function applyOptimisticMove(params: {
   await params.queryClient.cancelQueries({ queryKey: key });
 
   const previous = params.queryClient.getQueryData<ApplicationsResponse>(key);
+  if (!previous) {
+    return { previous: undefined };
+  }
   const boardBefore = toBoardColumns(previous);
 
   const move: BoardDragMove = {
@@ -34,7 +37,7 @@ export async function applyOptimisticMove(params: {
 
   params.queryClient.setQueryData<ApplicationsResponse>(key, {
     data: applicationStatuses.flatMap((status) => optimistic.columns[status]),
-    meta: previous?.meta ?? { page: 1, per_page: 25, total: 0 }
+    meta: previous.meta
   });
 
   return { previous };
