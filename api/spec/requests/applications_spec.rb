@@ -159,6 +159,60 @@ RSpec.describe "Applications", type: :request do
 
       expect(response).to have_http_status(:created)
       expect(JSON.parse(response.body).dig("data", "title")).to eq("Rails Engineer")
+      
+      application = Application.find(JSON.parse(response.body).dig("data", "id"))
+      event = application.events.first
+      expect(event.kind).to eq("status_changed")
+      expect(event.payload).to include("from" => nil, "to" => "applied")
+    end
+
+    it "rejects another user's company" do
+      other_company = create(:company)
+
+      post "/applications", params: {
+        application: {
+          company_id: other_company.id,
+          title: "Rails Engineer",
+          status: "applied"
+        }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body).fetch("errors")).to include("Company must belong to current user")
+    end
+
+    it "rejects another user's tag ids" do
+      own_tag = create(:tag, user: user)
+      other_tag = create(:tag)
+
+      post "/applications", params: {
+        application: {
+          company_id: company.id,
+          title: "Rails Engineer",
+          status: "applied",
+          tag_ids: [own_tag.id, other_tag.id]
+        }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body).fetch("errors").first).to include("Tags must belong to current user")
+    end
+
+    it "allows own tag ids" do
+      own_tag = create(:tag, user: user)
+
+      post "/applications", params: {
+        application: {
+          company_id: company.id,
+          title: "Rails Engineer",
+          status: "applied",
+          tag_ids: [own_tag.id]
+        }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      payload = JSON.parse(response.body).fetch("data")
+      expect(payload.fetch("tags").map { |tag| tag.fetch("id") }).to eq([own_tag.id])
     end
   end
 
@@ -172,6 +226,17 @@ RSpec.describe "Applications", type: :request do
       expect(application.reload.title).to eq("New")
     end
 
+    it "creates status_changed event on status transition" do
+      application = create(:application, user: user, company: company, status: :applied)
+
+      patch "/applications/#{application.id}", params: { application: { status: "interview" } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      event = application.reload.events.order(:created_at).last
+      expect(event.kind).to eq("status_changed")
+      expect(event.payload).to include("from" => "applied", "to" => "interview")
+    end
+
     it "returns validation errors for invalid status update" do
       application = create(:application, user: user, company: company, status: :applied)
 
@@ -180,6 +245,48 @@ RSpec.describe "Applications", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to include("errors")
       expect(JSON.parse(response.body).fetch("errors").first).to include("is not a valid status")
+    end
+
+    it "rejects updating to another user's company" do
+      application = create(:application, user: user, company: company)
+      other_company = create(:company)
+
+      patch "/applications/#{application.id}", params: {
+        application: { company_id: other_company.id }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body).fetch("errors")).to include("Company must belong to current user")
+      expect(application.reload.company_id).to eq(company.id)
+    end
+
+    it "rejects another user's tag on update" do
+      application = create(:application, user: user, company: company)
+      own_tag = create(:tag, user: user)
+      other_tag = create(:tag)
+
+      patch "/applications/#{application.id}", params: {
+        application: { tag_ids: [own_tag.id, other_tag.id] }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body).fetch("errors").first).to include("Tags must belong to current user")
+      expect(application.reload.tags).to be_empty
+    end
+
+    it "allows own company and tags on update" do
+      application = create(:application, user: user, company: company)
+      own_company = create(:company, user: user)
+      own_tag = create(:tag, user: user)
+
+      patch "/applications/#{application.id}", params: {
+        application: { company_id: own_company.id, tag_ids: [own_tag.id] }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      application.reload
+      expect(application.company_id).to eq(own_company.id)
+      expect(application.tags.map(&:id)).to eq([own_tag.id])
     end
   end
 
@@ -206,6 +313,7 @@ RSpec.describe "Applications", type: :request do
       expect(application.reload.status).to eq("interview")
       expect(application.position).to be > first.position
       expect(application.position).to be < second.position
+      expect(application.events.order(:created_at).last.payload).to include("from" => "applied", "to" => "interview")
     end
 
     it "denies moving another user's application" do
@@ -296,6 +404,7 @@ RSpec.describe "Applications", type: :request do
     it "returns application detail with notes" do
       application = create(:application, user: user, company: company)
       note = create(:note, application: application, body: "Followed up")
+      create(:event, application: application, kind: :status_changed, payload: { from: "wishlist", to: "applied" })
 
       get "/applications/#{application.id}", headers: headers, as: :json
 
@@ -303,6 +412,7 @@ RSpec.describe "Applications", type: :request do
       payload = JSON.parse(response.body).fetch("data")
       expect(payload.fetch("id")).to eq(application.id)
       expect(payload.fetch("notes").map { |entry| entry.fetch("id") }).to include(note.id)
+      expect(payload.fetch("events").map { |entry| entry.fetch("kind") }).to include("status_changed")
     end
   end
 

@@ -1,4 +1,6 @@
 class ApplicationsController < ApplicationController
+  class InvalidAssociationError < StandardError; end
+
   POSITION_STEP = 1024
   BOOLEAN_TRUE_VALUES = %w[true 1].freeze
   BOOLEAN_FALSE_VALUES = %w[false 0].freeze
@@ -15,26 +17,37 @@ class ApplicationsController < ApplicationController
 
   def show
     authorize @application
-    render json: { data: application_payload(@application, include_notes: true) }, status: :ok
+    render json: { data: application_payload(@application, include_notes: true, include_events: true) }, status: :ok
   end
 
   def create
-    application = current_user.applications.new(application_params)
+    application = current_user.applications.new(sanitized_application_params)
     authorize application
-    if application.save
-      render json: { data: application_payload(application) }, status: :created
-    else
-      render json: { errors: application.errors.full_messages }, status: :unprocessable_entity
+    Application.transaction do
+      if application.save
+        create_status_changed_event!(application, previous_status: nil)
+        render json: { data: application_payload(application) }, status: :created
+      else
+        render json: { errors: application.errors.full_messages }, status: :unprocessable_content
+      end
     end
+  rescue InvalidAssociationError => e
+    render json: { errors: [e.message] }, status: :unprocessable_content
   end
 
   def update
     authorize @application
-    if @application.update(application_params)
-      render json: { data: application_payload(@application) }, status: :ok
-    else
-      render json: { errors: @application.errors.full_messages }, status: :unprocessable_content
+    previous_status = @application.status
+    Application.transaction do
+      if @application.update(sanitized_application_params)
+        create_status_changed_event!(@application, previous_status: previous_status) if previous_status != @application.status
+        render json: { data: application_payload(@application) }, status: :ok
+      else
+        render json: { errors: @application.errors.full_messages }, status: :unprocessable_content
+      end
     end
+  rescue InvalidAssociationError => e
+    render json: { errors: [e.message] }, status: :unprocessable_content
   rescue ArgumentError => e
     render json: { errors: [ e.message ] }, status: :unprocessable_content
   end
@@ -49,7 +62,7 @@ class ApplicationsController < ApplicationController
     authorize @application
 
     unless move_payload_valid?
-      return render json: { errors: move_payload_errors }, status: :unprocessable_entity
+      return render json: { errors: move_payload_errors }, status: :unprocessable_content
     end
 
     Application.transaction do
@@ -72,10 +85,12 @@ class ApplicationsController < ApplicationController
         new_position = next_position_for(siblings, insert_at)
       end
 
+      previous_status = @application.status
       unless @application.update(status: target_status, position: new_position)
         render json: { errors: @application.errors.full_messages }, status: :unprocessable_content
         raise ActiveRecord::Rollback
       end
+      create_status_changed_event!(@application, previous_status: previous_status) if previous_status != @application.status
     end
 
     @application.reload
@@ -85,12 +100,42 @@ class ApplicationsController < ApplicationController
   private
 
   def set_application
-    @application = policy_scope(Application).includes(:company, :tags).find(params[:id])
+    @application = policy_scope(Application).includes(:company, :tags, :events, :notes).find(params[:id])
   end
 
   def application_params
     params.require(:application).permit(:company_id, :title, :status, :source, :salary_min, :salary_max,
                                         :currency, :remote, :location, :url, :applied_at, :position, tag_ids: [])
+  end
+
+  def sanitized_application_params
+    permitted = application_params.to_h
+    errors = []
+
+    if permitted.key?("company_id")
+      company = current_user.companies.find_by(id: permitted["company_id"])
+      if company.nil?
+        errors << "Company must belong to current user"
+      else
+        permitted["company_id"] = company.id
+      end
+    end
+
+    if permitted.key?("tag_ids")
+      requested_tag_ids = Array(permitted["tag_ids"]).reject(&:blank?).map { |id| Integer(id, exception: false) }
+      if requested_tag_ids.any?(&:nil?)
+        errors << "Tag ids must be valid integers"
+      else
+        owned_tag_ids = current_user.tags.where(id: requested_tag_ids).pluck(:id)
+        invalid_tag_ids = requested_tag_ids.uniq - owned_tag_ids
+        errors << "Tags must belong to current user: #{invalid_tag_ids.join(', ')}" if invalid_tag_ids.any?
+        permitted["tag_ids"] = requested_tag_ids
+      end
+    end
+
+    raise InvalidAssociationError, errors.join(". ") if errors.any?
+
+    permitted
   end
 
   def filtered_applications
@@ -195,16 +240,27 @@ class ApplicationsController < ApplicationController
     end
   end
 
-  def application_payload(application, include_notes: false)
+  def application_payload(application, include_notes: false, include_events: false)
     include_payload = {
       company: { only: %i[id name website location] },
       tags: { only: %i[id name color] }
     }
     include_payload[:notes] = { only: %i[id application_id body created_at updated_at] } if include_notes
+    include_payload[:events] = { only: %i[id kind payload created_at updated_at] } if include_events
 
     application.as_json(
       only: %i[id user_id company_id title status source salary_min salary_max currency remote location url applied_at position created_at updated_at],
       include: include_payload
+    )
+  end
+
+  def create_status_changed_event!(application, previous_status:)
+    application.events.create!(
+      kind: :status_changed,
+      payload: {
+        from: previous_status,
+        to: application.status
+      }
     )
   end
 end
