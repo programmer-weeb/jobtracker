@@ -29,6 +29,21 @@ Then run API and web dev servers in separate terminals:
 - Web scaffold exists with React 19 + TanStack Query + TanStack Router shell.
 - Root GitHub Actions workflow added for API RSpec and web lint/test.
 
+## API Contract Notes
+
+- `GET /applications` filter behavior:
+  - Unknown `status` value is ignored.
+  - Blank/whitespace `q` is ignored.
+  - Non-numeric `company` or `tag` is ignored.
+  - `remote` accepts only `true|1|false|0` (case-insensitive); invalid values are ignored.
+  - All valid filters combine with intersection semantics.
+  - Responses always scoped to `current_user` records.
+- `PATCH /applications/:id/move` validation behavior:
+  - Missing `application` payload returns `422` with `errors`.
+  - Missing/invalid `status` returns `422` with `errors`.
+  - Missing/non-numeric/negative `position` returns `422` with `errors`.
+  - Unauthorized access to another user's application returns `404`.
+
 ## Next Implementation Slice
 
 - Auth (Devise JWT) setup and request specs.

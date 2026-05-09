@@ -314,5 +314,14 @@ RSpec.describe "Applications", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
+
+    it "does not update another user's application" do
+      other_application = create(:application, title: "Original")
+
+      patch "/applications/#{other_application.id}", params: { application: { title: "Hacked" } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(other_application.reload.title).to eq("Original")
+    end
   end
 end

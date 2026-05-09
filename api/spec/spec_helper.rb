@@ -2,6 +2,7 @@ require "simplecov"
 
 SimpleCov.start "rails" do
   add_filter "/spec/"
+  minimum_coverage 85
 end
 
 RSpec.configure do |config|
