@@ -22,12 +22,14 @@ Then run API and web dev servers in separate terminals:
 - `cd api && bin/rails s`
 - `cd web && npm run dev`
 
-## Current Status
+## Demo Credentials
 
-- Week 1 Day 1-2 started.
-- API scaffold exists with route map, CORS config, and RSpec baseline.
-- Web scaffold exists with React 19 + TanStack Query + TanStack Router shell.
-- Root GitHub Actions workflow added for API RSpec and web lint/test.
+- `demo@example.com / password123`
+- `scoped@example.com / password123`
+
+## Seeds
+
+- Run `cd api && bin/rails db:seed` to load demo/scoped users and sample records.
 
 ## API Contract Notes
 
@@ -44,8 +46,15 @@ Then run API and web dev servers in separate terminals:
   - Missing/non-numeric/negative `position` returns `422` with `errors`.
   - Unauthorized access to another user's application returns `404`.
 
-## Next Implementation Slice
+## Test Commands
 
-- Auth (Devise JWT) setup and request specs.
-- Core models/migrations (`Company`, `Application`, `Tag`, `Note`, `Event`).
-- Pundit policies + CRUD endpoints.
+- API:
+  - `cd api && bundle exec rspec`
+  - `cd api && bin/rubocop`
+  - `cd api && bin/brakeman --quiet --no-pager`
+  - `cd api && bin/bundler-audit check`
+- Web:
+  - `cd web && npm run lint`
+  - `cd web && npm run test -- --run`
+  - `cd web && npm run typecheck`
+  - `cd web && npm run build`
