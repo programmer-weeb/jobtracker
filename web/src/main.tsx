@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { router } from "./app/router";
 import { queryClient } from "./app/query-client";
 import { AuthProvider, useAuth } from "./features/auth/context";
+import { ErrorBoundary } from "./components/error-boundary";
 import "./styles/global.css";
 
 function AppRouter() {
@@ -17,7 +18,9 @@ createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppRouter />
+        <ErrorBoundary>
+          <AppRouter />
+        </ErrorBoundary>
       </AuthProvider>
       {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
     </QueryClientProvider>
