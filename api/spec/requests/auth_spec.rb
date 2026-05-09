@@ -110,7 +110,7 @@ RSpec.describe "Auth", type: :request do
     end
   end
 
-  describe "Rack::Attack throttling" do
+  describe "Rack::Attack throttling", :rack_attack do
     context "POST /auth/login throttling" do
       it "throttles after 10 requests per minute per IP" do
         user = create(:user, email: "throttle@example.com", password: "password123")
