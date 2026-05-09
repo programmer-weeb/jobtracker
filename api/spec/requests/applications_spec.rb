@@ -171,6 +171,16 @@ RSpec.describe "Applications", type: :request do
       expect(response).to have_http_status(:ok)
       expect(application.reload.title).to eq("New")
     end
+
+    it "returns validation errors for invalid status update" do
+      application = create(:application, user: user, company: company, status: :applied)
+
+      patch "/applications/#{application.id}", params: { application: { status: "not-real-status" } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)).to include("errors")
+      expect(JSON.parse(response.body).fetch("errors").first).to include("is not a valid status")
+    end
   end
 
   describe "DELETE /applications/:id" do
@@ -211,7 +221,7 @@ RSpec.describe "Applications", type: :request do
 
       patch "/applications/#{application.id}/move", params: { application: { status: "not-real", position: 0 } }, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq("errors" => [ "Status is invalid" ])
     end
 
@@ -220,12 +230,12 @@ RSpec.describe "Applications", type: :request do
 
       patch "/applications/#{application.id}/move", params: { application: { position: 0 } }, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq("errors" => [ "Status is required" ])
 
       patch "/applications/#{application.id}/move", params: { application: { status: "interview" } }, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq("errors" => [ "Position is required" ])
     end
 
@@ -234,7 +244,7 @@ RSpec.describe "Applications", type: :request do
 
       patch "/applications/#{application.id}/move", params: {}, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq("errors" => [ "Application payload is required" ])
     end
 
@@ -243,7 +253,7 @@ RSpec.describe "Applications", type: :request do
 
       patch "/applications/#{application.id}/move", params: { application: { status: "interview", position: -1 } }, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq("errors" => [ "Position must be a non-negative integer" ])
     end
 
@@ -252,7 +262,7 @@ RSpec.describe "Applications", type: :request do
 
       patch "/applications/#{application.id}/move", params: { application: { status: "interview", position: "abc" } }, headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq("errors" => [ "Position must be a non-negative integer" ])
     end
 

@@ -33,8 +33,10 @@ class ApplicationsController < ApplicationController
     if @application.update(application_params)
       render json: { data: application_payload(@application) }, status: :ok
     else
-      render json: { errors: @application.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: @application.errors.full_messages }, status: :unprocessable_content
     end
+  rescue ArgumentError => e
+    render json: { errors: [ e.message ] }, status: :unprocessable_content
   end
 
   def destroy
@@ -71,7 +73,7 @@ class ApplicationsController < ApplicationController
       end
 
       unless @application.update(status: target_status, position: new_position)
-        render json: { errors: @application.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: @application.errors.full_messages }, status: :unprocessable_content
         raise ActiveRecord::Rollback
       end
     end
