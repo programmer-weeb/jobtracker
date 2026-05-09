@@ -2,6 +2,8 @@
 
 Visual job application tracker with kanban board, built as a portfolio piece.
 
+![Rails](https://img.shields.io/badge/Rails-8-CC0000?logo=rubyonrails) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react) ![Coverage API](https://img.shields.io/badge/api%20coverage-92.6%25-brightgreen) ![Coverage Web](https://img.shields.io/badge/web%20coverage-73.5%25-yellow)
+
 Monorepo for portfolio project: Rails API + React frontend for tracking job applications with kanban workflow.
 
 ## Why I built this
