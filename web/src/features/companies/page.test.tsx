@@ -27,11 +27,15 @@ function renderPage() {
   );
 }
 
+const acme = { id: 1, user_id: 1, name: "Acme", website: "https://acme.io", location: "SF", notes: "priority", created_at: "", updated_at: "" };
+
 beforeEach(() => {
-  vi.clearAllMocks();
-  fetchCompaniesMock.mockResolvedValue({
-    data: [{ id: 1, user_id: 1, name: "Acme", website: "https://acme.io", location: "SF", notes: "priority", created_at: "", updated_at: "" }]
-  });
+  vi.resetAllMocks();
+  fetchCompaniesMock.mockImplementation(() =>
+    Promise.resolve({
+      data: [acme]
+    })
+  );
   createCompanyMock.mockResolvedValue({
     data: { id: 2, user_id: 1, name: "OpenAI", website: null, location: "Remote", notes: null, created_at: "", updated_at: "" }
   });
@@ -48,11 +52,53 @@ afterEach(() => {
 });
 
 describe("CompaniesPage", () => {
-  it("fetches and renders companies", async () => {
+  it("renders loading state", () => {
+    fetchCompaniesMock.mockImplementation(() => new Promise(() => {}));
+
     renderPage();
 
-    expect(await screen.findByText("Acme")).toBeInTheDocument();
-    expect(fetchCompaniesMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Loading companies...")).toBeInTheDocument();
+  });
+
+  it("renders empty and query error states", async () => {
+    fetchCompaniesMock.mockResolvedValueOnce({ data: [] });
+    renderPage();
+    expect(await screen.findByText("No companies yet. Add your first company above.")).toBeInTheDocument();
+
+    cleanup();
+    fetchCompaniesMock.mockRejectedValueOnce(new Error("boom"));
+    renderPage();
+    expect(await screen.findByText(/Failed to load companies: boom/)).toBeInTheDocument();
+  });
+
+  it("validates required create name", async () => {
+    renderPage();
+    await screen.findByText("Acme");
+
+    fireEvent.click(screen.getByRole("button", { name: /add company/i }));
+
+    expect(screen.getByText("Company name is required.")).toBeInTheDocument();
+    expect(createCompanyMock).not.toHaveBeenCalled();
+  });
+
+  it("handles create/update/delete API failures", async () => {
+    renderPage();
+    await screen.findByText("Acme");
+
+    createCompanyMock.mockRejectedValueOnce(new Error("create failed"));
+    fireEvent.change(screen.getByLabelText("Create company name"), { target: { value: "Bad Co" } });
+    fireEvent.click(screen.getByRole("button", { name: /add company/i }));
+    expect(await screen.findByText("create failed")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    updateCompanyMock.mockRejectedValueOnce(new Error("update failed"));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("update failed")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    deleteCompanyMock.mockRejectedValueOnce(new Error("delete failed"));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(await screen.findByText("delete failed")).toBeInTheDocument();
   });
 
   it("create, edit, delete call correct APIs and update UI", async () => {
@@ -63,13 +109,16 @@ describe("CompaniesPage", () => {
     fireEvent.change(screen.getByLabelText("Create location"), { target: { value: "Remote" } });
     fireEvent.click(screen.getByRole("button", { name: /add company/i }));
 
-    await waitFor(() => expect(createCompanyMock).toHaveBeenCalledWith({
-      name: "OpenAI",
-      website: null,
-      location: "Remote",
-      notes: null
-    }));
+    await waitFor(() =>
+      expect(createCompanyMock).toHaveBeenCalledWith({
+        name: "OpenAI",
+        website: null,
+        location: "Remote",
+        notes: null
+      })
+    );
     expect(await screen.findByText("OpenAI")).toBeInTheDocument();
+    expect(screen.getByText("Company added.")).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[1]);
     const nameInputs = screen.getAllByLabelText("Company name");
@@ -83,6 +132,6 @@ describe("CompaniesPage", () => {
     expect(acmeRow).toBeTruthy();
     fireEvent.click(within(acmeRow as HTMLElement).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(deleteCompanyMock).toHaveBeenCalledWith(1));
-    await waitFor(() => expect(screen.queryByText("Acme Updated")).not.toBeInTheDocument());
+    expect(screen.getByText("Company deleted.")).toBeInTheDocument();
   });
 });

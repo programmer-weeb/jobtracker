@@ -12,7 +12,12 @@ vi.mock("../features/auth/hooks", () => ({
 
 vi.mock("../features/applications/hooks", () => ({
   useApplications: () => ({ isLoading: false }),
-  useMoveApplication: () => ({ mutateAsync: vi.fn() })
+  useMoveApplication: () => ({ mutateAsync: vi.fn() }),
+  useTags: () => ({ data: { data: [] } })
+}));
+
+vi.mock("../features/companies/hooks", () => ({
+  useCompanies: () => ({ data: { data: [] } })
 }));
 
 describe("protected layout", () => {

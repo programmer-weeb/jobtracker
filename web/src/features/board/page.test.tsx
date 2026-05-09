@@ -7,12 +7,23 @@ import { queryKeys } from "../../lib/query-keys";
 import type { ApplicationsResponse, Application } from "../applications/model";
 
 const mutateSpy = vi.fn();
+const navigateMock = vi.fn();
+const useSearchMock = vi.fn();
 let dragEndHandler: ((event: DragEndLike) => void) | undefined;
 
 type DragEndLike = {
   active: { data: { current: { type: string; applicationId: number; status: Application["status"] } } };
   over: { data: { current: { type: string; status: Application["status"] } } } | null;
 };
+
+vi.mock("@tanstack/react-router", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-router")>("@tanstack/react-router");
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+    useSearch: (...args: unknown[]) => useSearchMock(...args)
+  };
+});
 
 vi.mock("@dnd-kit/core", async () => {
   const React = await import("react");
@@ -65,11 +76,20 @@ vi.mock("../applications/hooks", () => ({
       ]
     }
   }),
+  useTags: () => ({ data: { data: [{ id: 1, name: "urgent", color: "#f00" }] } }),
   useMoveApplication: () => ({ mutate: mutateSpy })
+}));
+
+vi.mock("../companies/hooks", () => ({
+  useCompanies: () => ({
+    data: { data: [{ id: 3, user_id: 1, name: "Acme", website: null, location: null, notes: null, created_at: "", updated_at: "" }] }
+  })
 }));
 
 beforeEach(() => {
   mutateSpy.mockClear();
+  navigateMock.mockClear();
+  useSearchMock.mockReturnValue({});
 });
 
 describe("BoardPage", () => {
@@ -87,6 +107,7 @@ describe("BoardPage", () => {
 
   it("renders grouped columns smoke test", () => {
     renderWithClient();
+    expect(screen.getByLabelText("Search applications")).toBeInTheDocument();
     expect(screen.getByText("Wishlist")).toBeInTheDocument();
     expect(screen.getByText("Applied")).toBeInTheDocument();
     expect(screen.getByText("Interview")).toBeInTheDocument();

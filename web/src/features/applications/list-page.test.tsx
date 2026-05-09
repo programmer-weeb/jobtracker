@@ -57,7 +57,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   useSearchMock.mockReturnValue({});
   fetchApplicationsMock.mockResolvedValue({
     data: [{ id: 7, title: "Backend Engineer", status: "applied", remote: true, applied_at: "2026-05-01", company: { id: 2, name: "Acme", website: null, location: null } }]
@@ -68,6 +68,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe("ApplicationsPage filters", () => {
@@ -80,19 +81,52 @@ describe("ApplicationsPage filters", () => {
     await waitFor(() => expect(fetchApplicationsMock).toHaveBeenCalledWith({ q: "rails", status: "applied", tag: 5, remote: true, company: 2 }));
   });
 
-  it("updates url search params from filter interactions", async () => {
+  it("debounces q updates and keeps exact filter params in url", async () => {
     renderPage();
     await screen.findByText("Backend Engineer");
 
     fireEvent.change(screen.getByLabelText("Search applications"), { target: { value: "golang" } });
+    expect(navigateMock).not.toHaveBeenCalledWith(expect.objectContaining({ search: expect.objectContaining({ q: "golang" }) }));
+
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
       to: "/applications",
       search: expect.objectContaining({ q: "golang" })
     }));
 
+    fireEvent.change(screen.getByLabelText("Filter by status"), { target: { value: "interview" } });
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/applications",
+      search: expect.objectContaining({ status: "interview" })
+    }));
+    fireEvent.change(screen.getByLabelText("Filter by tag"), { target: { value: "5" } });
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/applications",
+      search: expect.objectContaining({ tag: 5 })
+    }));
+    fireEvent.change(screen.getByLabelText("Filter by company"), { target: { value: "2" } });
+    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/applications",
+      search: expect.objectContaining({ company: 2 })
+    }));
     fireEvent.change(screen.getByLabelText("Filter by remote"), { target: { value: "false" } });
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: "/applications",
       search: expect.objectContaining({ remote: false })
     }));
+  });
+
+  it("reset filters clears url search object", async () => {
+    useSearchMock.mockReturnValue({ q: "rails", status: "offer", tag: 5, remote: false, company: 2 });
+    renderPage();
+    await screen.findByText("Backend Engineer");
+
+    fireEvent.click(screen.getByRole("button", { name: /reset filters/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: "/applications",
+      search: { status: undefined, q: undefined, tag: undefined, remote: undefined, company: undefined }
+    });
   });
 });
