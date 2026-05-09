@@ -34,7 +34,9 @@ export function toSearchFilters(filters: ApplicationsFilters) {
     q: filters.q,
     tag: filters.tag,
     remote: filters.remote,
-    company: filters.company
+    company: filters.company,
+    page: filters.page,
+    per_page: filters.per_page
   };
 }
 

@@ -33,6 +33,8 @@ vi.mock("./api", () => ({
     if (filters.tag !== undefined) normalized.tag = filters.tag;
     if (filters.remote !== undefined) normalized.remote = filters.remote;
     if (filters.company !== undefined) normalized.company = filters.company;
+    if (filters.page !== undefined && filters.page !== 1) normalized.page = filters.page;
+    if (filters.per_page !== undefined && filters.per_page !== 25) normalized.per_page = filters.per_page;
     return normalized;
   }
 }));
@@ -60,7 +62,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   useSearchMock.mockReturnValue({});
   fetchApplicationsMock.mockResolvedValue({
-    data: [{ id: 7, title: "Backend Engineer", status: "applied", remote: true, applied_at: "2026-05-01", company: { id: 2, name: "Acme", website: null, location: null } }]
+    data: [{ id: 7, title: "Backend Engineer", status: "applied", remote: true, applied_at: "2026-05-01", company: { id: 2, name: "Acme", website: null, location: null } }],
+    meta: { page: 1, per_page: 25, total: 1 }
   });
   fetchTagsMock.mockResolvedValue({ data: [{ id: 5, name: "urgent", color: "#ff0000" }] });
   fetchCompaniesMock.mockResolvedValue({ data: [{ id: 2, user_id: 1, name: "Acme", website: null, location: null, notes: null, created_at: "", updated_at: "" }] });
@@ -127,6 +130,57 @@ describe("ApplicationsPage filters", () => {
     expect(navigateMock).toHaveBeenCalledWith({
       to: "/applications",
       search: { status: undefined, q: undefined, tag: undefined, remote: undefined, company: undefined }
+    });
+  });
+});
+
+describe("ApplicationsPage pagination", () => {
+  it("displays pagination info and disables prev on first page", async () => {
+    renderPage();
+    await screen.findByText("Backend Engineer");
+
+    expect(screen.getByText("Showing 1–1 of 1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
+  });
+
+  it("navigates to next page and disables next when at last page", async () => {
+    fetchApplicationsMock.mockResolvedValueOnce({
+      data: [
+        { id: 1, title: "App 1", status: "applied", remote: true, applied_at: "2026-05-01", company: { id: 2, name: "Acme", website: null, location: null } },
+        { id: 2, title: "App 2", status: "applied", remote: true, applied_at: "2026-05-02", company: { id: 2, name: "Acme", website: null, location: null } }
+      ],
+      meta: { page: 1, per_page: 2, total: 4 }
+    });
+
+    renderPage();
+    await screen.findByText("App 1");
+
+    expect(screen.getByText("Showing 1–2 of 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: "/applications",
+      search: expect.objectContaining({ page: 2 })
+    });
+  });
+
+  it("navigates to previous page and disables prev on first page", async () => {
+    useSearchMock.mockReturnValue({ page: 2 });
+    fetchApplicationsMock.mockResolvedValueOnce({
+      data: [{ id: 3, title: "App 3", status: "applied", remote: true, applied_at: "2026-05-03", company: { id: 2, name: "Acme", website: null, location: null } }],
+      meta: { page: 2, per_page: 2, total: 4 }
+    });
+
+    renderPage();
+    await screen.findByText("App 3");
+
+    expect(screen.getByText("Showing 3–4 of 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /previous/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: "/applications",
+      search: expect.objectContaining({ page: 1 })
     });
   });
 });

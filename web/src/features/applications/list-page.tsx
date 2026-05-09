@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Card } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { useCompanies } from "../companies/hooks";
 import { applicationsRoute } from "../../routes/applications";
 import { ApplicationsFiltersBar, type ApplicationFiltersState } from "./components/filters-bar";
@@ -79,36 +80,75 @@ export function ApplicationsPage() {
         {isError ? <p className="text-sm text-[var(--danger)]">Failed to load applications: {(error as Error).message}</p> : null}
 
         {!isLoading && !isError ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead>
-                <tr>
-                  <th className="pb-3">Role</th>
-                  <th className="pb-3">Company</th>
-                  <th className="pb-3">Status</th>
-                  <th className="pb-3">Remote</th>
-                  <th className="pb-3">Applied</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications.length === 0 ? (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-[var(--muted-foreground)]">No applications found.</td>
+                    <th className="pb-3">Role</th>
+                    <th className="pb-3">Company</th>
+                    <th className="pb-3">Status</th>
+                    <th className="pb-3">Remote</th>
+                    <th className="pb-3">Applied</th>
                   </tr>
-                ) : (
-                  applications.map((application) => (
-                    <tr key={application.id} className="border-t border-[var(--border)]">
-                      <td className="py-3 font-medium">{application.title}</td>
-                      <td className="py-3 text-[var(--muted-foreground)]">{application.company.name}</td>
-                      <td className="py-3 capitalize">{application.status}</td>
-                      <td className="py-3">{application.remote ? "Remote" : "Onsite"}</td>
-                      <td className="py-3 text-[var(--muted-foreground)]">{application.applied_at ?? "-"}</td>
+                </thead>
+                <tbody>
+                  {applications.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-[var(--muted-foreground)]">No applications found.</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    applications.map((application) => (
+                      <tr key={application.id} className="border-t border-[var(--border)]">
+                        <td className="py-3 font-medium">{application.title}</td>
+                        <td className="py-3 text-[var(--muted-foreground)]">{application.company.name}</td>
+                        <td className="py-3 capitalize">{application.status}</td>
+                        <td className="py-3">{application.remote ? "Remote" : "Onsite"}</td>
+                        <td className="py-3 text-[var(--muted-foreground)]">{application.applied_at ?? "-"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {data?.meta && (
+              <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-4">
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  {applications.length === 0
+                    ? "No applications"
+                    : `Showing ${(data.meta.page - 1) * data.meta.per_page + 1}–${Math.min(data.meta.page * data.meta.per_page, data.meta.total)} of ${data.meta.total}`}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={data.meta.page === 1}
+                    onClick={() => {
+                      void navigate({
+                        to: "/applications",
+                        search: toSearchFilters({ ...filters, page: data.meta.page - 1 })
+                      });
+                    }}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={data.meta.page * data.meta.per_page >= data.meta.total}
+                    onClick={() => {
+                      void navigate({
+                        to: "/applications",
+                        search: toSearchFilters({ ...filters, page: data.meta.page + 1 })
+                      });
+                    }}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         ) : null}
       </Card>
     </div>
