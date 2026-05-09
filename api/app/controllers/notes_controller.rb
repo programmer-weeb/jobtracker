@@ -7,10 +7,16 @@ class NotesController < ApplicationController
     note = application.notes.new(note_params)
     authorize note
 
-    if note.save
-      render json: { data: note.as_json(only: %i[id application_id body created_at updated_at]) }, status: :created
-    else
-      render json: { errors: note.errors.full_messages }, status: :unprocessable_entity
+    Application.transaction do
+      if note.save
+        application.events.create!(
+          kind: :note_added,
+          payload: { note_id: note.id }
+        )
+        render json: { data: note.as_json(only: %i[id application_id body created_at updated_at]) }, status: :created
+      else
+        render json: { errors: note.errors.full_messages }, status: :unprocessable_content
+      end
     end
   end
 

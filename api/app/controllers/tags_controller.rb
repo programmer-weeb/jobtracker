@@ -14,7 +14,7 @@ class TagsController < ApplicationController
     if tag.save
       render json: { data: tag.as_json(only: %i[id name color user_id created_at updated_at]) }, status: :created
     else
-      render json: { errors: tag.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: tag.errors.full_messages }, status: :unprocessable_content
     end
   end
 

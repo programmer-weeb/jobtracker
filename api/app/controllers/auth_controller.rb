@@ -6,7 +6,7 @@ class AuthController < ApplicationController
     if user.save
       render_auth_payload(user, :created)
     else
-      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_content
     end
   end
 

@@ -19,7 +19,7 @@ class CompaniesController < ApplicationController
     if company.save
       render json: { data: company.as_json(only: %i[id name website location notes user_id created_at updated_at]) }, status: :created
     else
-      render json: { errors: company.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: company.errors.full_messages }, status: :unprocessable_content
     end
   end
 
@@ -28,7 +28,7 @@ class CompaniesController < ApplicationController
     if @company.update(company_params)
       render json: { data: @company.as_json(only: %i[id name website location notes user_id created_at updated_at]) }, status: :ok
     else
-      render json: { errors: @company.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: @company.errors.full_messages }, status: :unprocessable_content
     end
   end
 
