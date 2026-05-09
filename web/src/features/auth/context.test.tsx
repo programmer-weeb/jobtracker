@@ -1,11 +1,21 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, act, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./context";
 
 const meMock = vi.fn();
+const configureHttpClientMock = vi.fn();
+let capturedHttpOptions: { getToken: () => string | null; onUnauthorized: () => void } | undefined;
 
 vi.mock("./api", () => ({
   me: (...args: unknown[]) => meMock(...args)
+}));
+
+vi.mock("../../lib/http", () => ({
+  configureHttpClient: (opts: unknown) => {
+    configureHttpClientMock(opts);
+    capturedHttpOptions = opts as { getToken: () => string | null; onUnauthorized: () => void };
+  },
+  http: { get: vi.fn(), post: vi.fn(), delete: vi.fn() }
 }));
 
 const user = { id: 1, email: "test@example.com", name: "Test User" };
@@ -36,6 +46,8 @@ describe("AuthProvider", () => {
   beforeEach(() => {
     localStorage.clear();
     meMock.mockReset();
+    configureHttpClientMock.mockReset();
+    capturedHttpOptions = undefined;
   });
 
   afterEach(() => {
@@ -136,5 +148,84 @@ describe("AuthProvider", () => {
     }
 
     expect(() => render(<OutsideConsumer />)).toThrow("useAuth must be used inside AuthProvider");
+  });
+
+  it("getToken returns current session token after setSession", async () => {
+    render(
+      <AuthProvider>
+        <Consumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId("hydrated")).toHaveTextContent("true"));
+    expect(capturedHttpOptions?.getToken()).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /set session/i }));
+
+    await waitFor(() => {
+      expect(capturedHttpOptions?.getToken()).toBe("new-token");
+    });
+  });
+
+  it("onUnauthorized clears session and redirects when not on login page", async () => {
+    const originalLocation = window.location;
+    const assignMock = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).location = { ...originalLocation, assign: assignMock, pathname: "/board" };
+
+    try {
+      render(
+        <AuthProvider>
+          <Consumer />
+        </AuthProvider>
+      );
+
+      await waitFor(() => expect(screen.getByTestId("hydrated")).toHaveTextContent("true"));
+
+      fireEvent.click(screen.getByRole("button", { name: /set session/i }));
+      expect(screen.getByTestId("token")).toHaveTextContent("new-token");
+
+      await waitFor(() => expect(capturedHttpOptions?.getToken()).toBe("new-token"));
+
+      act(() => {
+        capturedHttpOptions?.onUnauthorized?.();
+      });
+
+      expect(screen.getByTestId("token")).toHaveTextContent("none");
+      expect(assignMock).toHaveBeenCalledWith("/login");
+    } finally {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).location = originalLocation;
+    }
+  });
+
+  it("onUnauthorized does not redirect when already on login page", async () => {
+    const originalLocation = window.location;
+    const assignMock = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).location = { ...originalLocation, assign: assignMock, pathname: "/login" };
+
+    try {
+      render(
+        <AuthProvider>
+          <Consumer />
+        </AuthProvider>
+      );
+
+      await waitFor(() => expect(screen.getByTestId("hydrated")).toHaveTextContent("true"));
+
+      act(() => {
+        capturedHttpOptions?.onUnauthorized?.();
+      });
+
+      expect(assignMock).not.toHaveBeenCalled();
+    } finally {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).location = originalLocation;
+    }
   });
 });
