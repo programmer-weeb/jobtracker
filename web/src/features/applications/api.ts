@@ -48,6 +48,8 @@ export function normalizeApplicationFilters(filters: ApplicationsFilters = {}): 
   if (filters.tag !== undefined) normalized.tag = filters.tag;
   if (filters.remote !== undefined) normalized.remote = filters.remote;
   if (filters.company !== undefined) normalized.company = filters.company;
+  if (filters.page !== undefined && filters.page !== 1) normalized.page = filters.page;
+  if (filters.per_page !== undefined && filters.per_page !== 25) normalized.per_page = filters.per_page;
 
   return normalized;
 }
