@@ -8,6 +8,7 @@ import {
   fetchApplications,
   fetchTags,
   moveApplication,
+  normalizeApplicationFilters,
   updateApplication,
   type ApplicationsFilters,
   type UpdateApplicationInput
@@ -38,9 +39,11 @@ function syncApplicationInCaches(
 }
 
 export function useApplications(filters: ApplicationsFilters = {}) {
+  const normalizedFilters = normalizeApplicationFilters(filters);
+
   return useQuery({
-    queryKey: queryKeys.applications(filters),
-    queryFn: () => fetchApplications(filters)
+    queryKey: queryKeys.applications(normalizedFilters),
+    queryFn: () => fetchApplications(normalizedFilters)
   });
 }
 

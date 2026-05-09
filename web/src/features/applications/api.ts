@@ -8,8 +8,11 @@ import type {
 } from "./model";
 
 export interface ApplicationsFilters extends Record<string, string | number | boolean | undefined> {
-  status?: string;
+  status?: ApplicationStatus;
   q?: string;
+  tag?: number;
+  remote?: boolean;
+  company?: number;
 }
 
 export interface MoveApplicationInput {
@@ -34,6 +37,18 @@ export interface UpdateApplicationInput {
     applied_at?: string | null;
     tag_ids?: number[];
   };
+}
+
+export function normalizeApplicationFilters(filters: ApplicationsFilters = {}): ApplicationsFilters {
+  const normalized: ApplicationsFilters = {};
+
+  if (filters.status) normalized.status = filters.status;
+  if (filters.q && filters.q.trim()) normalized.q = filters.q.trim();
+  if (filters.tag !== undefined) normalized.tag = filters.tag;
+  if (filters.remote !== undefined) normalized.remote = filters.remote;
+  if (filters.company !== undefined) normalized.company = filters.company;
+
+  return normalized;
 }
 
 export async function fetchApplications(filters: ApplicationsFilters = {}) {
