@@ -1,5 +1,7 @@
 class ApplicationsController < ApplicationController
   POSITION_STEP = 1024
+  BOOLEAN_TRUE_VALUES = %w[true 1].freeze
+  BOOLEAN_FALSE_VALUES = %w[false 0].freeze
 
   before_action :authenticate_user!
   before_action :set_application, only: %i[show update destroy move]
@@ -44,9 +46,13 @@ class ApplicationsController < ApplicationController
   def move
     authorize @application
 
+    unless move_payload_valid?
+      return render json: { errors: move_payload_errors }, status: :unprocessable_entity
+    end
+
     Application.transaction do
-      target_status = move_status
-      target_index = move_index
+      target_status = move_status_value
+      target_index = move_index_value
 
       sibling_scope = policy_scope(Application)
         .where(status: target_status)
@@ -89,17 +95,23 @@ class ApplicationsController < ApplicationController
     applications = policy_scope(Application).includes(:company, :tags).order(created_at: :desc)
     authorize Application
 
-    applications = applications.where(status: params[:status]) if params[:status].present?
-    applications = applications.where(company_id: params[:company]) if params[:company].present?
-    applications = applications.joins(:tags).where(tags: { id: params[:tag] }) if params[:tag].present?
+    status = normalized_status_param
+    applications = applications.where(status: status) if status
 
-    if params[:remote].present?
-      remote = ActiveModel::Type::Boolean.new.cast(params[:remote])
+    company_id = normalized_integer_param(params[:company])
+    applications = applications.where(company_id: company_id) if company_id
+
+    tag_id = normalized_integer_param(params[:tag])
+    applications = applications.joins(:tags).where(tags: { id: tag_id }) if tag_id
+
+    remote = normalized_remote_param
+    if remote != :invalid
       applications = applications.where(remote: remote)
     end
 
-    if params[:q].present?
-      query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].strip)}%"
+    query_param = params[:q].to_s.strip
+    if query_param.present?
+      query = "%#{ActiveRecord::Base.sanitize_sql_like(query_param)}%"
       applications = applications.joins(:company)
         .where("applications.title ILIKE :q OR applications.source ILIKE :q OR applications.location ILIKE :q OR companies.name ILIKE :q", q: query)
     end
@@ -107,13 +119,58 @@ class ApplicationsController < ApplicationController
     applications.distinct
   end
 
-  def move_status
-    value = params.require(:application).fetch(:status)
-    Application.statuses.key?(value) ? value : @application.status
+  def move_params
+    params.require(:application)
   end
 
-  def move_index
-    params.require(:application).fetch(:position, 0).to_i
+  def move_payload_errors
+    errors = []
+    errors << "Status is required" unless move_params.key?(:status)
+    errors << "Status is invalid" if move_params.key?(:status) && !Application.statuses.key?(move_params[:status].to_s)
+    errors << "Position is required" unless move_params.key?(:position)
+
+    if move_params.key?(:position)
+      position = normalized_integer_param(move_params[:position])
+      errors << "Position must be a non-negative integer" if position.nil? || position.negative?
+    end
+
+    errors
+  rescue ActionController::ParameterMissing
+    [ "Application payload is required" ]
+  end
+
+  def move_payload_valid?
+    move_payload_errors.empty?
+  end
+
+  def move_status_value
+    move_params[:status]
+  end
+
+  def move_index_value
+    normalized_integer_param(move_params[:position])
+  end
+
+  def normalized_status_param
+    value = params[:status].to_s
+    return nil if value.blank?
+
+    Application.statuses.key?(value) ? value : nil
+  end
+
+  def normalized_integer_param(value)
+    return nil if value.blank?
+
+    Integer(value, exception: false)
+  end
+
+  def normalized_remote_param
+    value = params[:remote].to_s.strip.downcase
+    return :invalid if value.blank?
+    return true if BOOLEAN_TRUE_VALUES.include?(value)
+    return false if BOOLEAN_FALSE_VALUES.include?(value)
+
+    :invalid
   end
 
   def next_position_for(records, insert_at)

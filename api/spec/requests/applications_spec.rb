@@ -28,6 +28,16 @@ RSpec.describe "Applications", type: :request do
       expect(ids).to eq([keep.id])
     end
 
+    it "ignores unknown status filter" do
+      first = create(:application, user: user, company: company, status: :applied)
+      second = create(:application, user: user, company: company, status: :interview)
+
+      get "/applications?status=unknown", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(first.id, second.id)
+    end
+
     it "filters by company" do
       own_company = create(:company, user: user)
       keep = create(:application, user: user, company: own_company)
@@ -59,6 +69,59 @@ RSpec.describe "Applications", type: :request do
 
       ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
       expect(ids).to eq([local.id])
+    end
+
+    it "ignores invalid remote filter value" do
+      first = create(:application, user: user, company: company, remote: false)
+      second = create(:application, user: user, company: company, remote: true)
+
+      get "/applications?remote=definitely", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(first.id, second.id)
+    end
+
+    it "treats blank q as no search filter" do
+      first = create(:application, user: user, company: company, title: "Backend Engineer")
+      second = create(:application, user: user, company: company, title: "Frontend Engineer")
+
+      get "/applications?q=   ", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(first.id, second.id)
+    end
+
+    it "ignores non-numeric company and tag filters" do
+      keep = create(:application, user: user, company: company)
+      tag = create(:tag, user: user)
+      keep.tags << tag
+
+      get "/applications?company=abc&tag=nope", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(keep.id)
+    end
+
+    it "applies combined filters as intersection for current user only" do
+      keep_company = create(:company, user: user, name: "OpenAI")
+      keep_tag = create(:tag, user: user, name: "Priority")
+      keep = create(:application, user: user, company: keep_company, status: :applied, remote: true, title: "Rails API Engineer")
+      keep.tags << keep_tag
+
+      create(:application, user: user, company: keep_company, status: :interview, remote: true, title: "Rails API Engineer").tags << keep_tag
+      create(:application, user: user, company: keep_company, status: :applied, remote: false, title: "Rails API Engineer").tags << keep_tag
+      create(:application, user: user, company: keep_company, status: :applied, remote: true, title: "Different Title")
+
+      other_user = create(:user)
+      other_company = create(:company, user: other_user, name: "OpenAI")
+      other_tag = create(:tag, user: other_user, name: "Priority")
+      other_application = create(:application, user: other_user, company: other_company, status: :applied, remote: true, title: "Rails API Engineer")
+      other_application.tags << other_tag
+
+      get "/applications?status=applied&q=rails&company=#{keep_company.id}&tag=#{keep_tag.id}&remote=true", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to eq([keep.id])
     end
 
     it "searches by q across title, source, location and company name" do
@@ -141,6 +204,81 @@ RSpec.describe "Applications", type: :request do
       patch "/applications/#{other_application.id}/move", params: { application: { status: "interview", position: 0 } }, headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns validation error for invalid status value" do
+      application = create(:application, user: user, company: company, status: :applied, position: 0)
+
+      patch "/applications/#{application.id}/move", params: { application: { status: "not-real", position: 0 } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("errors" => [ "Status is invalid" ])
+    end
+
+    it "returns validation errors when status or position is missing" do
+      application = create(:application, user: user, company: company, status: :applied, position: 0)
+
+      patch "/applications/#{application.id}/move", params: { application: { position: 0 } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("errors" => [ "Status is required" ])
+
+      patch "/applications/#{application.id}/move", params: { application: { status: "interview" } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("errors" => [ "Position is required" ])
+    end
+
+    it "returns validation error when application payload is missing" do
+      application = create(:application, user: user, company: company, status: :applied, position: 0)
+
+      patch "/applications/#{application.id}/move", params: {}, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("errors" => [ "Application payload is required" ])
+    end
+
+    it "returns validation error for negative position" do
+      application = create(:application, user: user, company: company, status: :applied, position: 0)
+
+      patch "/applications/#{application.id}/move", params: { application: { status: "interview", position: -1 } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("errors" => [ "Position must be a non-negative integer" ])
+    end
+
+    it "returns validation error for non-numeric position" do
+      application = create(:application, user: user, company: company, status: :applied, position: 0)
+
+      patch "/applications/#{application.id}/move", params: { application: { status: "interview", position: "abc" } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("errors" => [ "Position must be a non-negative integer" ])
+    end
+
+    it "moves to end when position is very large" do
+      first = create(:application, user: user, company: company, status: :interview, position: 0)
+      second = create(:application, user: user, company: company, status: :interview, position: 1024)
+      application = create(:application, user: user, company: company, status: :applied, position: 0)
+
+      patch "/applications/#{application.id}/move", params: { application: { status: "interview", position: 999_999 } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(application.reload.status).to eq("interview")
+      expect(application.position).to be > second.position
+      expect(application.position).to be > first.position
+    end
+
+    it "repositions within same status column" do
+      first = create(:application, user: user, company: company, status: :interview, position: 0)
+      second = create(:application, user: user, company: company, status: :interview, position: 1024)
+      third = create(:application, user: user, company: company, status: :interview, position: 2048)
+
+      patch "/applications/#{third.id}/move", params: { application: { status: "interview", position: 1 } }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(third.reload.position).to be > first.position
+      expect(third.position).to be < second.position
     end
   end
 
