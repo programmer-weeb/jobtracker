@@ -82,7 +82,7 @@ export function ApplicationDetailPage() {
 
       <Card className="h-fit space-y-3 p-4 md:p-6">
         <h2 className="text-lg font-semibold">Activity</h2>
-        <ActivityTimeline application={application} notes={notes} />
+        <ActivityTimeline application={application} />
       </Card>
     </div>
   );

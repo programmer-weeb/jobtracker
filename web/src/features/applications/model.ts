@@ -23,6 +23,14 @@ export interface Note {
   updated_at: string;
 }
 
+export interface ApplicationEvent {
+  id: number;
+  kind: "status_changed" | "note_added" | "reminder_sent";
+  payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Application {
   id: number;
   user_id: number;
@@ -43,6 +51,7 @@ export interface Application {
   company: CompanySummary;
   tags: TagSummary[];
   notes?: Note[];
+  events?: ApplicationEvent[];
 }
 
 export interface ApplicationsResponse {

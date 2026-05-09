@@ -69,13 +69,13 @@ export async function updateApplication(input: UpdateApplicationInput) {
 }
 
 export async function moveApplication(input: MoveApplicationInput) {
-  const { data } = await http.patch<ApplicationsResponse["data"][number]>(`/applications/${input.id}/move`, {
+  const { data } = await http.patch<ApplicationResponse>(`/applications/${input.id}/move`, {
     application: {
       status: input.status,
       position: input.position
     }
   });
-  return data;
+  return data.data;
 }
 
 export async function fetchTags() {

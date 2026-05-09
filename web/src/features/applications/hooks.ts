@@ -21,7 +21,17 @@ function syncApplicationInCaches(
   queryClient: QueryClient,
   application: Application
 ) {
-  queryClient.setQueryData(queryKeys.applicationDetail(application.id), { data: application });
+  queryClient.setQueryData<{ data: Application }>(queryKeys.applicationDetail(application.id), (old) => {
+    if (!old) return { data: application };
+    return {
+      data: {
+        ...old.data,
+        ...application,
+        notes: application.notes !== undefined ? application.notes : old.data.notes,
+        events: application.events !== undefined ? application.events : old.data.events
+      }
+    };
+  });
 
   const allApplicationsLists = queryClient.getQueriesData<ApplicationsResponse>({
     queryKey: ["applications"]
@@ -68,6 +78,7 @@ export function useUpdateApplication() {
     mutationFn: (input: UpdateApplicationInput) => updateApplication(input),
     onSuccess: (response) => {
       syncApplicationInCaches(queryClient, response.data);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
     }
   });
 }
@@ -78,16 +89,13 @@ export function useCreateNote(applicationId: number) {
   return useMutation({
     mutationFn: (body: string) => createNote(applicationId, body),
     onSuccess: (response) => {
-      queryClient.setQueryData<{ data: Application }>(queryKeys.applicationDetail(applicationId), (current) => {
-        if (!current) {
-          return current;
-        }
-
+      const current = queryClient.getQueryData<{ data: Application }>(queryKeys.applicationDetail(applicationId));
+      if (current) {
         const notes = [response.data, ...(current.data.notes ?? [])];
         const updated = { ...current.data, notes };
         syncApplicationInCaches(queryClient, updated);
-        return { data: updated };
-      });
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.applicationDetail(applicationId) });
     }
   });
 }
