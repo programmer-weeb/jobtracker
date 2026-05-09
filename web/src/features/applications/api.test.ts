@@ -32,4 +32,80 @@ describe("normalizeApplicationFilters", () => {
     const normalized = normalizeApplicationFilters(input as Parameters<typeof normalizeApplicationFilters>[0]);
     expect(normalized).toEqual({ status: "interview", q: "senior", page: 2 });
   });
+
+  it("trims search query and drops if empty", () => {
+    expect(normalizeApplicationFilters({ q: "  hello  " })).toEqual({ q: "hello" });
+    expect(normalizeApplicationFilters({ q: "   " })).toEqual({});
+  });
+});
+
+import { vi } from "vitest";
+import { http } from "../../lib/http";
+import {
+  fetchApplications,
+  fetchApplication,
+  updateApplication,
+  moveApplication,
+  fetchTags,
+  createNote,
+  deleteNote
+} from "./api";
+
+vi.mock("../../lib/http", () => ({
+  http: {
+    get: vi.fn(),
+    patch: vi.fn(),
+    post: vi.fn(),
+    delete: vi.fn()
+  }
+}));
+
+describe("api helpers", () => {
+  it("fetchApplications calls GET /applications", async () => {
+    vi.mocked(http.get).mockResolvedValueOnce({ data: "applications" });
+    const result = await fetchApplications({ page: 2 });
+    expect(http.get).toHaveBeenCalledWith("/applications", { params: { page: 2 } });
+    expect(result).toBe("applications");
+  });
+
+  it("fetchApplication calls GET /applications/:id", async () => {
+    vi.mocked(http.get).mockResolvedValueOnce({ data: "app" });
+    const result = await fetchApplication(42);
+    expect(http.get).toHaveBeenCalledWith("/applications/42");
+    expect(result).toBe("app");
+  });
+
+  it("updateApplication calls PATCH /applications/:id", async () => {
+    vi.mocked(http.patch).mockResolvedValueOnce({ data: "app" });
+    const result = await updateApplication({ id: 42, application: { title: "New" } });
+    expect(http.patch).toHaveBeenCalledWith("/applications/42", { application: { title: "New" } });
+    expect(result).toBe("app");
+  });
+
+  it("moveApplication calls PATCH /applications/:id/move", async () => {
+    vi.mocked(http.patch).mockResolvedValueOnce({ data: { data: "app" } });
+    const result = await moveApplication({ id: 42, status: "applied", position: 1 });
+    expect(http.patch).toHaveBeenCalledWith("/applications/42/move", { application: { status: "applied", position: 1 } });
+    expect(result).toBe("app");
+  });
+
+  it("fetchTags calls GET /tags", async () => {
+    vi.mocked(http.get).mockResolvedValueOnce({ data: "tags" });
+    const result = await fetchTags();
+    expect(http.get).toHaveBeenCalledWith("/tags");
+    expect(result).toBe("tags");
+  });
+
+  it("createNote calls POST /applications/:id/notes", async () => {
+    vi.mocked(http.post).mockResolvedValueOnce({ data: "note" });
+    const result = await createNote(42, "hello");
+    expect(http.post).toHaveBeenCalledWith("/applications/42/notes", { note: { body: "hello" } });
+    expect(result).toBe("note");
+  });
+
+  it("deleteNote calls DELETE /notes/:id", async () => {
+    vi.mocked(http.delete).mockResolvedValueOnce({});
+    await deleteNote(10);
+    expect(http.delete).toHaveBeenCalledWith("/notes/10");
+  });
 });
