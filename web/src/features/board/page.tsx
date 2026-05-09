@@ -44,7 +44,7 @@ export function BoardPage() {
   const filters = useMemo(() => ({ ...search }) as ApplicationsFilters, [search]);
   const normalizedFilters = useMemo(() => toSearchFilters(filters), [filters]);
   const activeQueryKey = useMemo(() => queryKeys.applications(normalizedFilters), [normalizedFilters]);
-  const { data, isLoading, isError, error } = useApplications(filters);
+  const { data, isLoading, isError, error } = useApplications({ ...filters, per_page: 100 });
   const { data: tagsResponse } = useTags();
   const { data: companiesResponse } = useCompanies();
   const [activeCardId, setActiveCardId] = useState<number | null>(null);
@@ -168,6 +168,13 @@ export function BoardPage() {
           }}
         />
       </Card>
+      {data?.meta && data.meta.total > 100 && (
+        <Card className="p-4 bg-[var(--muted)]">
+          <p className="text-sm text-[var(--muted-foreground)]">
+            Board shows newest 100 applications. Use the table for the full list.
+          </p>
+        </Card>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {applicationStatuses.map((status) => (

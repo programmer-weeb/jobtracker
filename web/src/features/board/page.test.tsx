@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, act } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { render, screen, act, cleanup } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { BoardPage } from "./page";
 import { applyOptimisticMove, rollbackOptimisticMove } from "./optimistic";
 import { queryKeys } from "../../lib/query-keys";
@@ -65,15 +65,18 @@ vi.mock("@dnd-kit/sortable", async () => {
   };
 });
 
+let useApplicationsData: ApplicationsResponse & { meta?: { page: number; per_page: number; total: number } } | undefined;
+
 vi.mock("../applications/hooks", () => ({
   useApplications: () => ({
     isLoading: false,
     isError: false,
-    data: {
+    data: useApplicationsData || {
       data: [
         { id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } },
         { id: 2, title: "Frontend Engineer", status: "interview", position: 0, company: { name: "Beta" } }
-      ]
+      ],
+      meta: { page: 1, per_page: 100, total: 2 }
     }
   }),
   useTags: () => ({ data: { data: [{ id: 1, name: "urgent", color: "#f00" }] } }),
@@ -87,9 +90,15 @@ vi.mock("../companies/hooks", () => ({
 }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
   mutateSpy.mockClear();
   navigateMock.mockClear();
   useSearchMock.mockReturnValue({});
+  useApplicationsData = undefined;
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 describe("BoardPage", () => {
@@ -130,6 +139,24 @@ describe("BoardPage", () => {
       { id: number; status: Application["status"]; position: number; fromStatus: Application["status"] }
     ];
     expect(input).toEqual({ id: 1, status: "interview", position: 1, fromStatus: "applied" });
+  });
+
+  it("shows banner when total applications exceed 100", () => {
+    useApplicationsData = {
+      data: [{ id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } } as Application],
+      meta: { page: 1, per_page: 100, total: 150 }
+    };
+    renderWithClient();
+    expect(screen.getByText("Board shows newest 100 applications. Use the table for the full list.")).toBeInTheDocument();
+  });
+
+  it("does not show banner when total applications <= 100", () => {
+    useApplicationsData = {
+      data: [{ id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } } as Application],
+      meta: { page: 1, per_page: 100, total: 50 }
+    };
+    renderWithClient();
+    expect(screen.queryByText("Board shows newest 100 applications. Use the table for the full list.")).not.toBeInTheDocument();
   });
 });
 
