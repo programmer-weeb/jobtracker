@@ -5,13 +5,15 @@ app = "APP_NAME"
 primary_region = "sjc"
 
 [build]
-  image = "registry.fly.io/APP_NAME:latest"
+  dockerfile = "Dockerfile"
+
+# Set via: fly secrets set KEY=value
+# DATABASE_URL = "postgres://..."
+# DEVISE_JWT_SECRET_KEY = "generate-with: rails secret"
+# RAILS_MASTER_KEY = "see: config/master.key"
+# CORS_ALLOWED_ORIGINS = "https://web-domain.vercel.app"
 
 [env]
-  DATABASE_URL = "postgres://..."
-  DEVISE_JWT_SECRET_KEY = "generate-with: rails secret"
-  RAILS_MASTER_KEY = "see: config/master.key"
-  CORS_ALLOWED_ORIGINS = "https://web-domain.vercel.app"
   RAILS_ENV = "production"
 
 [http_service]
@@ -21,18 +23,13 @@ primary_region = "sjc"
   auto_start_machines = true
   min_machines_running = 1
 
-[[services]]
-  protocol = "tcp"
-  internal_port = 3000
-  ports = [80, 443]
-
 [[http_service.checks]]
   grace_period = "10s"
   interval = "30s"
   timeout = "5s"
   type = "http"
   method = "get"
-  path = "/health"
+  path = "/up"
 
 # Postgres attachment setup (run after deploy):
 # fly postgres create --name APP_NAME-db --region sjc
