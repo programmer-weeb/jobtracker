@@ -109,4 +109,39 @@ RSpec.describe "Auth", type: :request do
       expect(JSON.parse(response.body)).to include("error")
     end
   end
+
+  describe "Rack::Attack throttling" do
+    context "POST /auth/login throttling" do
+      it "throttles after 10 requests per minute per IP" do
+        user = create(:user, email: "throttle@example.com", password: "password123")
+        11.times do
+          post "/auth/login", params: {
+            user: {
+              email: "throttle@example.com",
+              password: "password123"
+            }
+          }, as: :json
+        end
+
+        expect(response).to have_http_status(:too_many_requests)
+      end
+    end
+
+    context "POST /auth/signup throttling" do
+      it "throttles after 10 requests per minute per IP" do
+        11.times do |n|
+          post "/auth/signup", params: {
+            user: {
+              name: "User #{n}",
+              email: "user#{n}@example.com",
+              password: "password123",
+              password_confirmation: "password123"
+            }
+          }, as: :json
+        end
+
+        expect(response).to have_http_status(:too_many_requests)
+      end
+    end
+  end
 end
