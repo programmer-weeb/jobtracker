@@ -55,6 +55,42 @@ Then run API and web dev servers in separate terminals:
   - `cd api && bin/bundler-audit check`
 - Web:
   - `cd web && npm run lint`
-  - `cd web && npm run test -- --run`
+  - `cd web && npm run test:coverage`
   - `cd web && npm run typecheck`
   - `cd web && npm run build`
+
+## Deploy
+
+### Environment Variables Required
+
+Both API and Web deployments require the following environment variables:
+
+**API (Fly.io)**
+- `DATABASE_URL` - PostgreSQL connection string
+- `DEVISE_JWT_SECRET_KEY` - Generate with `rails secret`
+- `RAILS_MASTER_KEY` - From `config/master.key`
+- `CORS_ALLOWED_ORIGINS` - Web frontend URL (e.g., `https://jobtracker.vercel.app`)
+
+**Web (Vercel)**
+- `VITE_API_BASE_URL` - API base URL (e.g., `https://jobtracker.fly.dev`)
+
+### Deployment Templates
+
+- **API**: See `api/fly.toml` for Fly.io configuration
+- **Web**: See `web/vercel.json` for Vercel SPA rewrites
+
+### Deploy Steps
+
+1. **API (Rails on Fly.io)**
+   - Update `api/fly.toml` with app name and region
+   - Run `fly apps create APP_NAME`
+   - Run `fly postgres create --name APP_NAME-db`
+   - Run `fly postgres attach APP_NAME-db --app APP_NAME`
+   - Set environment variables: `fly secrets set DEVISE_JWT_SECRET_KEY=... CORS_ALLOWED_ORIGINS=...`
+   - Deploy: `fly deploy`
+
+2. **Web (React on Vercel)**
+   - Connect GitHub repo to Vercel
+   - Configure root directory: `web`
+   - Set environment variable: `VITE_API_BASE_URL=https://API_URL.fly.dev`
+   - Deploy on push to main

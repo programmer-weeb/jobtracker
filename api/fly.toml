@@ -1,0 +1,39 @@
+# Fly.io deployment configuration for Rails API
+# Replace APP_NAME with your application name
+
+app = "APP_NAME"
+primary_region = "sjc"
+
+[build]
+  image = "registry.fly.io/APP_NAME:latest"
+
+[env]
+  DATABASE_URL = "postgres://..."
+  DEVISE_JWT_SECRET_KEY = "generate-with: rails secret"
+  RAILS_MASTER_KEY = "see: config/master.key"
+  CORS_ALLOWED_ORIGINS = "https://web-domain.vercel.app"
+  RAILS_ENV = "production"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 3000
+  ports = [80, 443]
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  timeout = "5s"
+  type = "http"
+  method = "get"
+  path = "/health"
+
+# Postgres attachment setup (run after deploy):
+# fly postgres create --name APP_NAME-db --region sjc
+# fly postgres attach APP_NAME-db --app APP_NAME
