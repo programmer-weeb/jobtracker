@@ -35,6 +35,9 @@ jobs:
           bundler-cache: true
           working-directory: api
       - run: bundle exec rspec
+      - run: bin/rubocop
+      - run: bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+      - run: bin/bundler-audit check
 
   web:
     runs-on: ubuntu-latest
@@ -51,3 +54,5 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test -- --run
+      - run: npm run typecheck
+      - run: npm run build
