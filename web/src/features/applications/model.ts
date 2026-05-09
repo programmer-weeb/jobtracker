@@ -15,6 +15,14 @@ export interface TagSummary {
   color: string | null;
 }
 
+export interface Note {
+  id: number;
+  application_id: number;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Application {
   id: number;
   user_id: number;
@@ -34,8 +42,21 @@ export interface Application {
   updated_at: string;
   company: CompanySummary;
   tags: TagSummary[];
+  notes?: Note[];
 }
 
 export interface ApplicationsResponse {
   data: Application[];
+}
+
+export interface ApplicationResponse {
+  data: Application;
+}
+
+export interface TagsResponse {
+  data: TagSummary[];
+}
+
+export interface NoteResponse {
+  data: Note;
 }
