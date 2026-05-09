@@ -1,11 +1,13 @@
 class User < ApplicationRecord
   include Devise::JWT::RevocationStrategies::JTIMatcher
 
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
          :jwt_authenticatable, jwt_revocation_strategy: self
+
+  has_many :companies, dependent: :destroy
+  has_many :applications, dependent: :destroy
+  has_many :tags, dependent: :destroy
 
   validates :name, presence: true
 
