@@ -31,7 +31,7 @@ export function TagSelector({ tags, selectedIds, onChange, disabled = false }: T
             type="button"
             disabled={disabled}
             onClick={() => toggleTag(tag.id)}
-            className={`rounded-full border px-3 py-1 text-xs ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--border)]"}`}
+            className={`min-h-9 rounded-full border px-4 py-2 text-xs tracking-[-0.12px] ${active ? "border-[var(--ring)] bg-[var(--brand)] text-white" : "border-[var(--border)] bg-white text-[var(--foreground)]"}`}
           >
             {tag.name}
           </button>

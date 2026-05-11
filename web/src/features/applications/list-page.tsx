@@ -43,7 +43,14 @@ export function ApplicationsPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4">
+      <section className="mx-[calc(50%-50vw)] -mt-6 bg-[var(--surface-tile-1)] px-4 py-16 text-center text-white md:-mt-8 md:px-8">
+        <h1 className="apple-display mx-auto max-w-4xl text-[40px] leading-[1.1] md:text-[56px]">Every application, sharply in view.</h1>
+        <p className="mx-auto mt-4 max-w-2xl text-[24px] font-light leading-normal text-[var(--body-muted-dark)]">
+          Search, filter, and open the exact role record you need.
+        </p>
+      </section>
+
+      <Card className="p-4 md:p-6">
         <ApplicationsFiltersBar
           filters={filters}
           tags={tags}
@@ -76,21 +83,21 @@ export function ApplicationsPage() {
         />
       </Card>
 
-      <Card className="p-4">
+      <Card className="overflow-hidden p-0">
         {isLoading ? <p className="text-sm">Loading applications...</p> : null}
         {isError ? <p className="text-sm text-[var(--danger)]">Failed to load applications: {(error as Error).message}</p> : null}
 
         {!isLoading && !isError ? (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
-                <thead>
-                  <tr>
-                    <th className="pb-3">Role</th>
-                    <th className="pb-3">Company</th>
-                    <th className="pb-3">Status</th>
-                    <th className="pb-3">Remote</th>
-                    <th className="pb-3">Applied</th>
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="bg-[var(--canvas-parchment)]">
+                  <tr className="text-[var(--muted-foreground)]">
+                    <th className="px-5 py-4 font-semibold">Role</th>
+                    <th className="px-5 py-4 font-semibold">Company</th>
+                    <th className="px-5 py-4 font-semibold">Status</th>
+                    <th className="px-5 py-4 font-semibold">Remote</th>
+                    <th className="px-5 py-4 font-semibold">Applied</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -102,7 +109,7 @@ export function ApplicationsPage() {
                     applications.map((application) => (
                       <tr
                         key={application.id}
-                        className="cursor-pointer border-t border-[var(--border)] transition-colors hover:bg-[var(--muted)]/50"
+                        className="cursor-pointer border-t border-[var(--border)] transition-colors hover:bg-[var(--surface-pearl)]"
                         onClick={() => {
                           void navigate({
                             to: "/applications/$id",
@@ -110,11 +117,11 @@ export function ApplicationsPage() {
                           });
                         }}
                       >
-                        <td className="py-3 font-medium">{application.title}</td>
-                        <td className="py-3 text-[var(--muted-foreground)]">{application.company.name}</td>
-                        <td className="py-3 capitalize">{application.status}</td>
-                        <td className="py-3">{application.remote ? "Remote" : "Onsite"}</td>
-                        <td className="py-3 text-[var(--muted-foreground)]">{application.applied_at ?? "-"}</td>
+                        <td className="px-5 py-4 font-semibold">{application.title}</td>
+                        <td className="px-5 py-4 text-[var(--muted-foreground)]">{application.company.name}</td>
+                        <td className="px-5 py-4 capitalize">{application.status}</td>
+                        <td className="px-5 py-4">{application.remote ? "Remote" : "Onsite"}</td>
+                        <td className="px-5 py-4 text-[var(--muted-foreground)]">{application.applied_at ?? "-"}</td>
                       </tr>
                     ))
                   )}
@@ -122,7 +129,7 @@ export function ApplicationsPage() {
               </table>
             </div>
             {data?.meta && (
-              <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-4">
+              <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-4">
                 <p className="text-sm text-[var(--muted-foreground)]">
                   {applications.length === 0
                     ? "No applications"

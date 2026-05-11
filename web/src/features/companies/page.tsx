@@ -144,11 +144,11 @@ function CompanyRow(props: {
 
   return (
     <tr className="border-t border-[var(--border)]">
-      <td className="px-3 py-3 font-medium">{company.name}</td>
-      <td className="px-3 py-3 text-[var(--muted-foreground)]">{company.website ?? "-"}</td>
-      <td className="px-3 py-3 text-[var(--muted-foreground)]">{company.location ?? "-"}</td>
-      <td className="px-3 py-3 text-[var(--muted-foreground)]">{company.notes ?? "-"}</td>
-      <td className="px-3 py-3">
+      <td className="px-5 py-4 font-semibold">{company.name}</td>
+      <td className="px-5 py-4 text-[var(--muted-foreground)]">{company.website ?? "-"}</td>
+      <td className="px-5 py-4 text-[var(--muted-foreground)]">{company.location ?? "-"}</td>
+      <td className="px-5 py-4 text-[var(--muted-foreground)]">{company.notes ?? "-"}</td>
+      <td className="px-5 py-4">
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>Edit</Button>
           <Button size="sm" variant="destructive" onClick={onRemove} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Delete"}</Button>
@@ -198,12 +198,14 @@ export function CompaniesPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4">
-        <h3 className="text-xl font-semibold">Companies</h3>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">Create and manage companies tied to your applications.</p>
-      </Card>
+      <section className="mx-[calc(50%-50vw)] -mt-6 bg-white px-4 py-16 text-center md:-mt-8 md:px-8">
+        <h1 className="apple-display mx-auto max-w-4xl text-[40px] leading-[1.1] md:text-[56px]">Companies that anchor the search.</h1>
+        <p className="mx-auto mt-4 max-w-2xl text-[24px] font-light leading-normal text-[var(--muted-foreground)]">
+          Keep employer context close to every application.
+        </p>
+      </section>
 
-      <Card className="p-4">
+      <Card className="p-4 md:p-6">
         <form className="grid gap-3 md:grid-cols-2" onSubmit={onCreate}>
           <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Company name" aria-label="Create company name" />
           <Input value={form.website} onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))} placeholder="Website" aria-label="Create website" />
@@ -217,7 +219,7 @@ export function CompaniesPage() {
         </form>
       </Card>
 
-      <Card className="p-0">
+      <Card className="overflow-hidden p-0">
         {isLoading ? <p className="p-4 text-sm">Loading companies...</p> : null}
         {isError ? <p className="p-4 text-sm text-[var(--danger)]">Failed to load companies: {(error as Error).message}</p> : null}
         {!isLoading && !isError && companies.length === 0 ? (
@@ -227,13 +229,13 @@ export function CompaniesPage() {
         {!isLoading && !isError && companies.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead>
-                <tr>
-                  <th className="px-3 py-3">Name</th>
-                  <th className="px-3 py-3">Website</th>
-                  <th className="px-3 py-3">Location</th>
-                  <th className="px-3 py-3">Notes</th>
-                  <th className="px-3 py-3">Actions</th>
+              <thead className="bg-[var(--canvas-parchment)]">
+                <tr className="text-[var(--muted-foreground)]">
+                  <th className="px-5 py-4 font-semibold">Name</th>
+                  <th className="px-5 py-4 font-semibold">Website</th>
+                  <th className="px-5 py-4 font-semibold">Location</th>
+                  <th className="px-5 py-4 font-semibold">Notes</th>
+                  <th className="px-5 py-4 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>

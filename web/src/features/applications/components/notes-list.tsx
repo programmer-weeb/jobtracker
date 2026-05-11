@@ -15,7 +15,7 @@ export function NotesList({ notes, onDelete, deletingId }: NotesListProps) {
   return (
     <ul className="space-y-3">
       {notes.map((note) => (
-        <li key={note.id} className="rounded-md border border-[var(--border)] p-3">
+        <li key={note.id} className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
           <p className="text-sm">{note.body}</p>
           <div className="mt-2 flex items-center justify-between gap-3">
             <p className="text-xs text-[var(--muted-foreground)]">{new Date(note.created_at).toLocaleString()}</p>

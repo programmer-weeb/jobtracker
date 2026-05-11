@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import type { ApplicationsFilters } from "../api";
@@ -19,29 +19,38 @@ function toSelectValue(value: string | number | undefined) {
   return value === undefined ? "" : String(value);
 }
 
+function SearchField({
+  value,
+  onSearchChange
+}: {
+  value: string;
+  onSearchChange: (value: string) => void;
+}) {
+  const [searchValue, setSearchValue] = useState(value);
+
+  return (
+    <Input
+      placeholder="Search title, company, source"
+      value={searchValue}
+      onChange={(event) => {
+        setSearchValue(event.target.value);
+        onSearchChange(event.target.value);
+      }}
+      aria-label="Search applications"
+      className="xl:col-span-2"
+    />
+  );
+}
+
 export function ApplicationsFiltersBar(props: FiltersBarProps) {
   const { filters, companies, tags, onChange, onSearchChange, onReset } = props;
-  const [searchValue, setSearchValue] = useState(filters.q ?? "");
-
-  useEffect(() => {
-    setSearchValue(filters.q ?? "");
-  }, [filters.q]);
 
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-      <Input
-        placeholder="Search title, company, source"
-        value={searchValue}
-        onChange={(event) => {
-          setSearchValue(event.target.value);
-          onSearchChange(event.target.value);
-        }}
-        aria-label="Search applications"
-        className="xl:col-span-2"
-      />
+      <SearchField key={filters.q ?? ""} value={filters.q ?? ""} onSearchChange={onSearchChange} />
 
       <select
-        className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+        className="h-11 rounded-full border border-black/10 bg-white px-4 text-sm tracking-[-0.224px]"
         value={toSelectValue(filters.status)}
         onChange={(event) => onChange({ ...filters, status: (event.target.value || undefined) as ApplicationStatus | undefined })}
         aria-label="Filter by status"
@@ -53,7 +62,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
       </select>
 
       <select
-        className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+        className="h-11 rounded-full border border-black/10 bg-white px-4 text-sm tracking-[-0.224px]"
         value={toSelectValue(filters.tag)}
         onChange={(event) => {
           const value = event.target.value;
@@ -68,7 +77,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
       </select>
 
       <select
-        className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+        className="h-11 rounded-full border border-black/10 bg-white px-4 text-sm tracking-[-0.224px]"
         value={toSelectValue(filters.company)}
         onChange={(event) => {
           const value = event.target.value;
@@ -83,7 +92,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
       </select>
 
       <select
-        className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+        className="h-11 rounded-full border border-black/10 bg-white px-4 text-sm tracking-[-0.224px]"
         value={filters.remote === undefined ? "" : filters.remote ? "true" : "false"}
         onChange={(event) => {
           const value = event.target.value;

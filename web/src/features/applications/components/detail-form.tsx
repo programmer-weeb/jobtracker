@@ -127,7 +127,7 @@ export function DetailForm({ application, availableTags, isSaving, onSubmit }: D
 
       <select
         {...register("status")}
-        className="flex h-10 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        className="flex h-11 w-full rounded-full border border-black/10 bg-white px-5 py-2 text-[17px] tracking-[-0.374px] outline-none"
       >
         {applicationStatuses.map((status) => (
           <option key={status} value={status}>

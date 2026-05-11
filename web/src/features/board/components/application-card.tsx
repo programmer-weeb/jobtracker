@@ -33,9 +33,9 @@ export function ApplicationCard({
       ref={isOverlay ? undefined : setNodeRef}
       style={isOverlay ? undefined : { transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "cursor-grab border border-[var(--border)] bg-white p-3 shadow-sm hover:border-[var(--brand-600)] active:cursor-grabbing",
+        "cursor-grab border border-[var(--border)] bg-white p-4 active:cursor-grabbing",
         isDragging && "opacity-40",
-        isOverlay && "rotate-1 shadow-lg"
+        isOverlay && "rotate-1"
       )}
       {...(isOverlay ? {} : attributes)}
       {...(isOverlay ? {} : listeners)}
@@ -54,8 +54,14 @@ export function ApplicationCard({
         }
       }}
     >
-      <p className="text-sm font-semibold leading-tight">{application.title}</p>
-      <p className="mt-1 text-xs text-[var(--muted-foreground)]">{application.company?.name ?? "Unknown company"}</p>
+      <p className="text-[17px] font-semibold leading-tight tracking-[-0.374px]">{application.title}</p>
+      <p className="mt-1 text-sm tracking-[-0.224px] text-[var(--muted-foreground)]">{application.company?.name ?? "Unknown company"}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {application.remote ? <span className="rounded-full bg-[var(--surface-pearl)] px-3 py-1 text-xs text-[var(--muted-foreground)]">Remote</span> : null}
+        {application.tags.slice(0, 2).map((tag) => (
+          <span key={tag.id} className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--muted-foreground)]">{tag.name}</span>
+        ))}
+      </div>
     </Card>
   );
 }

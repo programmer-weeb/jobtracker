@@ -144,7 +144,14 @@ export function BoardPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4">
+      <section className="mx-[calc(50%-50vw)] -mt-6 bg-white px-4 py-16 text-center md:-mt-8 md:px-8">
+        <h1 className="apple-display mx-auto max-w-4xl text-[40px] leading-[1.1] md:text-[56px]">Your search, staged by next move.</h1>
+        <p className="mx-auto mt-4 max-w-2xl text-[24px] font-light leading-normal text-[var(--muted-foreground)]">
+          Drag applications through a clean Kanban workflow without losing the detail behind each opportunity.
+        </p>
+      </section>
+
+      <Card className="p-4 md:p-6">
         <ApplicationsFiltersBar
           filters={filters}
           tags={tags}
@@ -170,7 +177,7 @@ export function BoardPage() {
         />
       </Card>
       {data?.meta && data.meta.total > 100 && (
-        <Card className="p-4 bg-[var(--muted)]">
+        <Card className="bg-[var(--surface-pearl)] p-4">
           <p className="text-sm text-[var(--muted-foreground)]">
             Board shows newest 100 applications. Use the table for the full list.
           </p>

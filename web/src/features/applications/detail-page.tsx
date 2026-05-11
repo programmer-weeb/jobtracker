@@ -53,7 +53,7 @@ export function ApplicationDetailPage() {
   return (
     <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
       <div className="space-y-4">
-        <Card className="space-y-4 p-4 md:p-6">
+        <Card className="space-y-5 p-5 md:p-8">
           <DetailHeader application={application} />
           <DetailForm
             application={application}
@@ -81,8 +81,8 @@ export function ApplicationDetailPage() {
           {tagsQuery.isError ? <p className="text-xs text-[var(--danger)]">Tags failed to load.</p> : null}
         </Card>
 
-        <Card className="space-y-4 p-4 md:p-6">
-          <h2 className="text-lg font-semibold">Notes</h2>
+        <Card className="space-y-4 p-5 md:p-8">
+          <h2 className="apple-display text-[28px] leading-tight">Notes</h2>
           <NoteComposer
             isSaving={createNoteMutation.isPending}
             onSubmit={async (body) => {
@@ -102,8 +102,8 @@ export function ApplicationDetailPage() {
         </Card>
       </div>
 
-      <Card className="h-fit space-y-3 p-4 md:p-6">
-        <h2 className="text-lg font-semibold">Activity</h2>
+      <Card className="h-fit space-y-3 bg-[var(--surface-tile-1)] p-5 text-white md:p-8">
+        <h2 className="apple-display text-[28px] leading-tight">Activity</h2>
         <ActivityTimeline application={application} />
       </Card>
 

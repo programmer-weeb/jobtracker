@@ -6,10 +6,11 @@ interface DetailHeaderProps {
 
 export function DetailHeader({ application }: DetailHeaderProps) {
   return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">{application.title}</h1>
-      <p className="text-sm text-[var(--muted-foreground)]">
-        {application.company.name} • {application.status} • {application.source ?? "Unknown source"}
+    <div className="space-y-2">
+      <p className="text-sm text-[var(--muted-foreground)]">{application.company.name}</p>
+      <h1 className="apple-display text-[34px] leading-tight md:text-[40px]">{application.title}</h1>
+      <p className="text-[17px] text-[var(--muted-foreground)]">
+        {application.status} / {application.source ?? "Unknown source"}
       </p>
     </div>
   );

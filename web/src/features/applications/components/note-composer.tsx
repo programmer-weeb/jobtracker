@@ -35,7 +35,7 @@ export function NoteComposer({ onSubmit, isSaving }: NoteComposerProps) {
     >
       <textarea
         {...register("body")}
-        className="min-h-24 w-full rounded-md border border-[var(--border)] bg-transparent p-3 text-sm"
+        className="min-h-28 w-full rounded-[18px] border border-[var(--border)] bg-white p-4 text-[17px] outline-none"
         placeholder="Add note"
       />
       {errors.body ? <p className="text-xs text-[var(--danger)]">{errors.body.message}</p> : null}

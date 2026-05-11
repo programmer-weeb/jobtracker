@@ -91,7 +91,7 @@ export function CreateApplicationForm({ companies, tags, isSaving, onCancel, onS
           <select
             value={selectedCompanyId}
             onChange={(event) => setForm((current) => ({ ...current, company_id: event.target.value }))}
-            className="h-10 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm"
+            className="h-11 w-full rounded-full border border-black/10 bg-white px-5 py-2 text-[17px] tracking-[-0.374px]"
             aria-label="Application company"
           >
             <option value="">Select company</option>
@@ -106,7 +106,7 @@ export function CreateApplicationForm({ companies, tags, isSaving, onCancel, onS
           <select
             value={form.status}
             onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as ApplicationStatus }))}
-            className="h-10 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm"
+            className="h-11 w-full rounded-full border border-black/10 bg-white px-5 py-2 text-[17px] tracking-[-0.374px]"
             aria-label="Application status"
           >
             {applicationStatuses.map((status) => (

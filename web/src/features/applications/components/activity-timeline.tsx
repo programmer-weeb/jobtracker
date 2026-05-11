@@ -40,15 +40,15 @@ export function ActivityTimeline({ application }: ActivityTimelineProps) {
   const items = buildTimeline(application);
 
   if (items.length === 0) {
-    return <p className="text-sm text-[var(--muted-foreground)]">No activity yet.</p>;
+    return <p className="text-sm text-[var(--body-muted-dark)]">No activity yet.</p>;
   }
 
   return (
     <ul className="space-y-2">
       {items.map((item) => (
-        <li key={item.id} className="rounded-md border border-[var(--border)] p-2 text-sm">
+        <li key={item.id} className="rounded-[18px] border border-white/15 bg-white/5 p-3 text-sm">
           <p>{item.label}</p>
-          <p className="text-xs text-[var(--muted-foreground)]">{new Date(item.at).toLocaleString()}</p>
+          <p className="text-xs text-[var(--body-muted-dark)]">{new Date(item.at).toLocaleString()}</p>
         </li>
       ))}
     </ul>
