@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { useCompanies } from "../companies/hooks";
+import { useCompanies, useCreateCompany } from "../companies/hooks";
 import { applicationsRoute } from "../../routes/applications";
 import { ApplicationsFiltersBar, type ApplicationFiltersState } from "./components/filters-bar";
 import { CreateApplicationForm } from "./components/create-application-form";
@@ -23,6 +23,7 @@ export function ApplicationsPage() {
   const createApplicationMutation = useCreateApplication();
   const createTagMutation = useCreateTag();
   const deleteTagMutation = useDeleteTag();
+  const createCompanyMutation = useCreateCompany();
 
   const applications = data?.data ?? [];
   const tags = tagsResponse?.data ?? [];
@@ -72,7 +73,12 @@ export function ApplicationsPage() {
           <CreateApplicationForm
             companies={companies}
             tags={tags}
-            isSaving={createApplicationMutation.isPending || createTagMutation.isPending || deleteTagMutation.isPending}
+            isSaving={
+              createApplicationMutation.isPending ||
+              createTagMutation.isPending ||
+              deleteTagMutation.isPending ||
+              createCompanyMutation.isPending
+            }
             onCancel={() => setIsCreateOpen(false)}
             onCreateTag={async (name) => {
               const response = await createTagMutation.mutateAsync({ name, color: "#0066cc" });
@@ -80,6 +86,10 @@ export function ApplicationsPage() {
             }}
             onDeleteTag={async (tagId) => {
               await deleteTagMutation.mutateAsync(tagId);
+            }}
+            onCreateCompany={async (name) => {
+              const response = await createCompanyMutation.mutateAsync({ name });
+              return response.data;
             }}
             onSubmit={async (values) => {
               await createApplicationMutation.mutateAsync(values);
