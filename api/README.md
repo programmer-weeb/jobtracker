@@ -27,7 +27,7 @@ Rails 8 API backend for JobTracker, a portfolio-grade job application tracker. T
 | Pundit | Authorization |
 | Rack CORS | Browser cross-origin API access |
 | Rack::Attack | Auth endpoint throttling |
-| Solid Cache / Queue / Cable | Rails database-backed adapters |
+| Solid Cache / Queue / Cable | Available Rails adapters; production demo uses in-process alternatives to keep Fly.io on one database |
 | RSpec | Test framework |
 | FactoryBot | Test data factories |
 | Shoulda Matchers | Model spec matchers |
@@ -339,6 +339,12 @@ demo@example.com / password123
 scoped@example.com / password123
 ```
 
+`db:seed` refuses to run in production. For a public resume demo deployment, use the guarded task instead:
+
+```bash
+ALLOW_DEMO_SEED=1 bundle exec rails demo:seed
+```
+
 ### Run Server
 
 ```bash
@@ -422,15 +428,25 @@ RAILS_MASTER_KEY
 CORS_ALLOWED_ORIGINS
 ```
 
+`fly postgres attach` provides `DATABASE_URL` for the primary database. This demo intentionally avoids separate `CACHE_DATABASE_URL`, `QUEUE_DATABASE_URL`, and `CABLE_DATABASE_URL` requirements; production uses `:memory_store`, async Active Job, and async Action Cable because the current API does not depend on durable jobs or realtime broadcasts.
+
 Deploy outline:
 
 ```bash
 fly apps create APP_NAME
-fly postgres create --name APP_NAME-db
+fly postgres create --name APP_NAME-db --region sjc
 fly postgres attach APP_NAME-db --app APP_NAME
-fly secrets set RAILS_MASTER_KEY=... DEVISE_JWT_SECRET_KEY=... CORS_ALLOWED_ORIGINS=...
+fly secrets set RAILS_MASTER_KEY=... DEVISE_JWT_SECRET_KEY=... CORS_ALLOWED_ORIGINS=https://YOUR-WEB.vercel.app
 fly deploy
 ```
+
+Seed the deployed demo data only when intentional:
+
+```bash
+fly ssh console --app APP_NAME -C "cd /rails && ALLOW_DEMO_SEED=1 bundle exec rails demo:seed"
+```
+
+The React frontend should be deployed from the monorepo root in Vercel with `Root Directory` set to `web`. Set `VITE_API_BASE_URL` to the Fly URL, for example `https://APP_NAME.fly.dev`, and keep `CORS_ALLOWED_ORIGINS` on Fly pointed at the deployed Vercel URL.
 
 ## Interview Talking Points
 
@@ -449,6 +465,6 @@ Strong API-specific topics to discuss:
 
 - JWTs are stored by the frontend in localStorage, which is simple but less XSS-resistant than HttpOnly cookies.
 - Search currently uses `ILIKE`; larger datasets would benefit from full-text search or trigram indexes.
-- The frontend detail form includes status, but the normal update endpoint intentionally does not permit status changes. Board status changes go through `/move`.
+- The production demo runtime favors simple in-process adapters over durable Solid adapters until background jobs or realtime features are needed.
 - A follow-up reminder feature would fit naturally because `reminder_sent` already exists as an event kind.
 - A Playwright end-to-end test could validate the full API plus frontend workflow through the browser.

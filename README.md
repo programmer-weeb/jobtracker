@@ -1,120 +1,307 @@
 # Job Application Tracker
 
-Visual job application tracker with kanban board, built as a portfolio piece.
+Portfolio-grade job application tracker built with a Rails API and a React TypeScript frontend.
 
 ![Rails](https://img.shields.io/badge/Rails-8-CC0000?logo=rubyonrails) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react) ![Coverage API](https://img.shields.io/badge/api%20coverage-92.6%25-brightgreen) ![Coverage Web](https://img.shields.io/badge/web%20coverage-92%25-brightgreen)
 
-Monorepo for portfolio project: Rails API + React frontend for tracking job applications with kanban workflow.
+JobTracker helps users manage job applications through a Kanban workflow, searchable table view, companies, notes, tags, and activity history. I built it to demonstrate full-stack product engineering: data modeling, secure API design, frontend state management, optimistic UI, testing, and deployment-oriented configuration.
 
-## Why I built this
+## What This Project Demonstrates
 
-I was applying to engineering roles in 2026 and wanted a single place to track applications, interviews, and notes — built it as a portfolio piece showcasing a Rails 8 API with full RSpec coverage and a React 19 + TanStack Query frontend with optimistic kanban drag-drop.
+- **Full-stack architecture**: Rails 8 API-only backend with a separate React 19 SPA.
+- **Authentication**: Devise + devise-jwt login/signup flow with bearer tokens.
+- **Token revocation**: JTI-based logout invalidates previously issued JWTs.
+- **Authorization**: Pundit policies and policy scopes isolate each user's data.
+- **Relational modeling**: Users, companies, applications, notes, tags, join table, and event timeline.
+- **Kanban workflow**: Drag-and-drop status movement with sparse position ordering.
+- **Optimistic UI**: Board cards move instantly and roll back if the API request fails.
+- **Search and filtering**: Status, company, tag, remote flag, and text search.
+- **Pagination**: API returns pagination metadata and caps page size.
+- **Testing discipline**: RSpec request/model specs, Vitest/RTL frontend tests, coverage gates.
+- **CI quality gates**: Tests, linting, typechecking, production build, Brakeman, and bundler-audit.
+- **Deployment awareness**: Fly.io API template, Vercel SPA rewrites, env-based config.
 
-## Structure
+## Product Features
 
-```text
-.
-├── api/    # Rails 8 API
-├── web/    # React + Vite + TypeScript
-└── plan.md
-```
+- User signup, login, logout, and authenticated session restore.
+- Company CRUD, scoped to the current user.
+- Job applications with title, company, source, salary range, currency, remote flag, location, URL, status, tags, and applied date.
+- Kanban board with columns: Wishlist, Applied, Interview, Offer, Rejected, Archived.
+- Application table with filters, debounced search, and pagination.
+- Application detail page with editable fields, notes, tags, and activity timeline.
+- Notes create timeline events.
+- Demo seed data for two users to show data isolation.
 
 ## Architecture
 
+```text
+┌──────────────┐   JSON + JWT    ┌────────────────┐
+│ React 19 SPA │ ──────────────▶ │ Rails 8 API    │
+│ TypeScript   │                 │ Devise + JWT   │
+│ TanStack     │ ◀────────────── │ Pundit         │
+│ dnd-kit      │                 │ Rack::Attack   │
+└──────────────┘                 └───────┬────────┘
+                                         │
+                                         ▼
+                                  ┌────────────┐
+                                  │ PostgreSQL │
+                                  └────────────┘
 ```
-┌────────────┐    HTTPS/JWT     ┌──────────────┐
-│ React 19   │ ───────────────▶ │  Rails 8 API │
-│ TanStack   │                  │  Devise+JWT  │
-│ + dnd-kit  │ ◀─────────────── │  Pundit      │
-└────────────┘     JSON         └──────┬───────┘
-                                       │
-                                ┌──────▼───────┐
-                                │ PostgreSQL   │
-                                └──────────────┘
+
+The repo is a monorepo:
+
+```text
+.
+├── api/    # Rails 8 API, PostgreSQL, Devise JWT, Pundit, RSpec
+├── web/    # React 19, Vite, TypeScript, TanStack Query/Router, Vitest
+└── plan.md
 ```
 
-<!-- TODO: hero GIF of kanban drag -->
+## Key Engineering Decisions
 
-## Quick Start
+### API-First Rails Backend
 
-1. `cd api && bundle install`
-2. `cd ../web && npm install`
-3. `cd .. && cp api/.env.example api/.env && cp web/.env.example web/.env`
+Rails runs in API mode and returns JSON only. This keeps the backend focused on authentication, authorization, validation, persistence, and API contracts while the React app owns the browser experience.
 
-Then run API and web dev servers in separate terminals:
+### Per-User Data Isolation
 
-- `cd api && bin/rails s`
-- `cd web && npm run dev`
+Every company, application, and tag belongs to a user. Controllers use Pundit policy scopes such as `policy_scope(Application)` so records are filtered at the database query level. The API also validates that submitted `company_id` and `tag_ids` belong to the current user.
+
+### JWT With JTI Revocation
+
+The app uses stateless JWT authentication for API requests. To support logout, each user has a `jti` value. Logging out rotates the JTI, causing previously issued tokens to fail validation.
+
+### Kanban Sparse Positioning
+
+Cards are ordered with an integer `position` and a `POSITION_STEP` of `1024`. Moving a card usually inserts it between neighboring positions instead of renumbering the whole column. When gaps become too small, the backend rebalances the column.
+
+### Optimistic Board Updates
+
+The frontend updates the TanStack Query cache immediately when a card is dragged. If the backend move request fails, the previous cache snapshot is restored. This makes the board feel responsive without giving up server authority over final ordering.
+
+### Focused Test Strategy
+
+The backend leans on request specs for end-to-end API behavior: auth, authorization, filtering, pagination, status movement, and JSON response shape. The frontend tests hooks, route guards, HTTP interceptors, board helper logic, and user-visible component states.
+
+## Backend Overview
+
+The Rails API exposes auth, companies, applications, Kanban movement, notes, and tags as JSON endpoints. It owns the backend contract, security model, database constraints, and deployment requirements.
+
+For backend-specific details, use [api/README.md](api/README.md) as the source of truth. It documents:
+
+- routes and request behavior
+- auth and JWT revocation
+- Pundit authorization strategy
+- database/domain model
+- application filtering and pagination
+- Kanban move algorithm
+- API setup, tests, env vars, CI, and deployment
+
+Keeping those details in the API README avoids drift between the monorepo overview and the backend service docs.
+
+## Local Development
+
+### Prerequisites
+
+- Ruby matching `api/.ruby-version`
+- PostgreSQL
+- Node 22+
+- npm
+
+### Setup
+
+```bash
+cd api
+bundle install
+bin/rails db:create db:migrate db:seed
+```
+
+```bash
+cd ../web
+npm install
+```
+
+Copy environment examples if needed:
+
+```bash
+cd ..
+cp api/.env.example api/.env
+cp web/.env.example web/.env
+```
+
+Start both apps in separate terminals:
+
+```bash
+cd api
+bin/rails s
+```
+
+```bash
+cd web
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+The API runs on:
+
+```text
+http://localhost:3000
+```
 
 ## Demo Credentials
 
-- `demo@example.com / password123`
-- `scoped@example.com / password123`
+Seed data creates:
 
-## Seeds
+```text
+demo@example.com / password123
+scoped@example.com / password123
+```
 
-- Run `cd api && bin/rails db:seed` to load demo/scoped users and sample records.
+Use both accounts to verify that each user only sees their own companies, applications, notes, and tags.
 
-## API Contract Notes
+## Test and Quality Commands
 
-- `GET /applications` filter behavior:
-  - Unknown `status` value is ignored.
-  - Blank/whitespace `q` is ignored.
-  - Non-numeric `company` or `tag` is ignored.
-  - `remote` accepts only `true|1|false|0` (case-insensitive); invalid values are ignored.
-  - All valid filters combine with intersection semantics.
-  - Responses always scoped to `current_user` records.
-- `PATCH /applications/:id/move` validation behavior:
-  - Missing `application` payload returns `422` with `errors`.
-  - Missing/invalid `status` returns `422` with `errors`.
-  - Missing/non-numeric/negative `position` returns `422` with `errors`.
-  - Unauthorized access to another user's application returns `404`.
+### API
 
-## Test Commands
+```bash
+cd api
+bundle exec rspec
+bin/rubocop
+bin/brakeman --quiet --no-pager
+bin/bundler-audit check
+```
 
-- API:
-  - `cd api && bundle exec rspec`
-  - `cd api && bin/rubocop`
-  - `cd api && bin/brakeman --quiet --no-pager`
-  - `cd api && bin/bundler-audit check`
-- Web:
-  - `cd web && npm run lint`
-  - `cd web && npm run test:coverage`
-  - `cd web && npm run typecheck`
-  - `cd web && npm run build`
+### Web
 
-## Deploy
+```bash
+cd web
+npm run lint
+npm run test:coverage
+npm run typecheck
+npm run build
+```
 
-### Environment Variables Required
+## CI
 
-Both API and Web deployments require the following environment variables:
+GitHub Actions runs two jobs.
 
-**API (Fly.io)**
-- `DATABASE_URL` - PostgreSQL connection string
-- `DEVISE_JWT_SECRET_KEY` - Generate with `rails secret`
-- `RAILS_MASTER_KEY` - From `config/master.key`
-- `CORS_ALLOWED_ORIGINS` - Web frontend URL (e.g., `https://jobtracker.vercel.app`)
+API job:
 
-**Web (Vercel)**
-- `VITE_API_BASE_URL` - API base URL (e.g., `https://jobtracker.fly.dev`)
+- PostgreSQL 16 service
+- `bundle exec rspec`
+- `bin/rubocop`
+- `bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error`
+- `bin/bundler-audit check`
 
-### Deployment Templates
+Web job:
 
-- **API**: See `api/fly.toml` for Fly.io configuration
-- **Web**: See `web/vercel.json` for Vercel SPA rewrites
+- Node 22
+- `npm ci`
+- `npm run lint`
+- `npm run test:coverage`
+- `npm run typecheck`
+- `npm run build`
 
-### Deploy Steps
+## Deployment
 
-1. **API (Rails on Fly.io)**
-   - Update `api/fly.toml` with app name and region
-   - Run `fly apps create APP_NAME`
-   - Run `fly postgres create --name APP_NAME-db`
-   - Run `fly postgres attach APP_NAME-db --app APP_NAME`
-   - Set environment variables: `fly secrets set DEVISE_JWT_SECRET_KEY=... CORS_ALLOWED_ORIGINS=...`
-   - Deploy: `fly deploy`
+### Recommended Git Workflow
 
-2. **Web (React on Vercel)**
-   - Connect GitHub repo to Vercel
-   - Configure root directory: `web`
-   - Set environment variable: `VITE_API_BASE_URL=https://API_URL.fly.dev`
-   - Deploy on push to main
+Use a focused deployment-readiness branch:
+
+```bash
+git switch -c deploy/resume-demo-readiness
+```
+
+Suggested commit groups:
+
+- `fix: prepare api production deployment config`
+- `feat: add guarded production demo seed task`
+- `feat: complete application creation demo flow`
+- `docs: document resume demo deployment`
+
+Deployment templates are included for both services:
+
+- API on Fly.io: `api/fly.toml`
+- Web on Vercel: `web/vercel.json`
+
+### API on Fly.io
+
+From the API directory:
+
+```bash
+cd api
+fly apps create APP_NAME
+fly postgres create --name APP_NAME-db --region sjc
+fly postgres attach APP_NAME-db --app APP_NAME
+fly secrets set RAILS_MASTER_KEY=... DEVISE_JWT_SECRET_KEY=... CORS_ALLOWED_ORIGINS=https://YOUR-WEB.vercel.app
+fly deploy
+```
+
+Fly Postgres attach provides `DATABASE_URL`; production is configured to use that single primary database for this demo. Required Fly secrets:
+
+```text
+RAILS_MASTER_KEY
+DEVISE_JWT_SECRET_KEY
+CORS_ALLOWED_ORIGINS
+```
+
+After deployment, seed the deterministic public demo data only when intentional:
+
+```bash
+fly ssh console --app APP_NAME -C "cd /rails && ALLOW_DEMO_SEED=1 bundle exec rails demo:seed"
+```
+
+### Web on Vercel
+
+Create the Vercel project from the monorepo root and set:
+
+```text
+Root Directory: web
+VITE_API_BASE_URL=https://APP_NAME.fly.dev
+```
+
+Set the Fly secret `CORS_ALLOWED_ORIGINS` to the deployed Vercel URL, for example:
+
+```bash
+fly secrets set CORS_ALLOWED_ORIGINS=https://YOUR-WEB.vercel.app --app APP_NAME
+```
+
+The Vercel rewrite in `web/vercel.json` sends all routes to `index.html`, which is required for the React SPA when users refresh protected routes like `/board`.
+
+## Trade-Offs and Future Improvements
+
+Current trade-offs:
+
+- JWTs are stored in localStorage for simplicity. For a higher-security production app, HttpOnly cookies with CSRF protection would be worth considering.
+- Search uses PostgreSQL `ILIKE`, which is fine for this scope. At larger scale, PostgreSQL full-text search or trigram indexes would be better.
+- The board fetches at most 100 applications for usability and rendering performance. The table view is the better interface for larger result sets.
+- Production demo runtime uses one Fly Postgres database with in-process cache, async jobs, and async cable because the app does not currently need durable background jobs or realtime broadcasts.
+
+High-value next improvements:
+
+- Add one Playwright end-to-end test for login, create company, create application, move card, and add note.
+- Add follow-up reminders using background jobs and the existing `reminder_sent` event type.
+- Add resume/version attachment support with Active Storage and object storage.
+
+## Interview Talking Points
+
+If discussing this project in an interview, the strongest technical areas are:
+
+- Why Rails API mode and React SPA are separated.
+- How Pundit scopes prevent cross-user data leaks.
+- How Devise JWT and JTI revocation work.
+- Why the board uses sparse positions instead of simple sequential ordering.
+- How optimistic updates are implemented and rolled back.
+- How request specs prove API behavior across auth, authorization, validation, and JSON responses.
+- How CI protects quality with tests, linting, typechecking, build checks, and security scanners.
+
+## Additional Documentation
+
+- `PROJECT_DEEP_DIVE_FOR_JUNIORS.md` explains the project for a junior developer joining the codebase.
+- `INTERVIEW_QUESTION_BANK.md` contains project-specific interview questions and answer outlines.
+- `plan.md` records the original build plan and milestone checklist.
