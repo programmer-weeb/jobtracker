@@ -23,6 +23,16 @@ export interface MoveApplicationInput {
   position: number;
 }
 
+export interface CreateApplicationInput {
+  company_id: number;
+  title: string;
+  status: ApplicationStatus;
+  source?: string | null;
+  remote: boolean;
+  location?: string | null;
+  tag_ids?: number[];
+}
+
 export interface UpdateApplicationInput {
   id: number;
   application: {
@@ -67,6 +77,13 @@ export async function fetchApplication(id: number) {
 export async function updateApplication(input: UpdateApplicationInput) {
   const { data } = await http.patch<ApplicationResponse>(`/applications/${input.id}`, {
     application: input.application
+  });
+  return data;
+}
+
+export async function createApplication(input: CreateApplicationInput) {
+  const { data } = await http.post<ApplicationResponse>("/applications", {
+    application: input
   });
   return data;
 }

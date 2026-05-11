@@ -34,14 +34,16 @@ export function normalizeFiltersFromSearch(search: Record<string, unknown>): App
 }
 
 export function toSearchFilters(filters: ApplicationsFilters) {
-  return {
-    status: filters.status,
-    q: filters.q,
-    tag: filters.tag,
-    remote: filters.remote,
-    company: filters.company,
-    page: filters.page,
-    per_page: filters.per_page
-  };
+  const search: Record<string, string | number | boolean> = {};
+
+  if (filters.status) search.status = filters.status;
+  if (filters.q) search.q = filters.q;
+  if (filters.tag !== undefined) search.tag = filters.tag;
+  if (filters.remote !== undefined) search.remote = filters.remote;
+  if (filters.company !== undefined) search.company = filters.company;
+  if (filters.page !== undefined) search.page = filters.page;
+  if (filters.per_page !== undefined) search.per_page = filters.per_page;
+
+  return search;
 }
 

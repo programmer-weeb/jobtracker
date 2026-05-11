@@ -20,6 +20,7 @@ const deleteNoteMock = vi.fn();
 
 vi.mock("./api", () => ({
   fetchApplications: vi.fn(),
+  createApplication: vi.fn(),
   moveApplication: vi.fn(),
   fetchApplication: (...args: unknown[]) => fetchApplicationMock(...args),
   fetchTags: (...args: unknown[]) => fetchTagsMock(...args),

@@ -166,6 +166,14 @@ describe("BoardPage", () => {
     expect(input).toEqual({ id: 1, status: "interview", position: 1, fromStatus: "applied" });
   });
 
+  it("opens application detail from a board card", () => {
+    renderWithClient();
+
+    fireEvent.click(screen.getByRole("link", { name: /backend engineer acme/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith({ to: "/applications/$id", params: { id: "1" } });
+  });
+
   it("shows banner when total applications exceed 100", () => {
     useApplicationsData = {
       data: [{ id: 1, title: "Backend Engineer", status: "applied", position: 0, company: { name: "Acme" } } as Application],

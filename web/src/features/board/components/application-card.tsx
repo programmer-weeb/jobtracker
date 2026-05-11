@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useNavigate } from "@tanstack/react-router";
 import { Card } from "../../../components/ui/card";
 import { cn } from "../../../lib/utils";
 import type { Application, ApplicationStatus } from "../../applications/model";
@@ -14,6 +15,7 @@ export function ApplicationCard({
   status: ApplicationStatus;
   isOverlay?: boolean;
 }) {
+  const navigate = useNavigate();
   const {
     attributes,
     listeners,
@@ -31,12 +33,26 @@ export function ApplicationCard({
       ref={isOverlay ? undefined : setNodeRef}
       style={isOverlay ? undefined : { transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "cursor-grab border border-[var(--border)] bg-white p-3 shadow-sm active:cursor-grabbing",
+        "cursor-grab border border-[var(--border)] bg-white p-3 shadow-sm hover:border-[var(--brand-600)] active:cursor-grabbing",
         isDragging && "opacity-40",
         isOverlay && "rotate-1 shadow-lg"
       )}
       {...(isOverlay ? {} : attributes)}
       {...(isOverlay ? {} : listeners)}
+      role={isOverlay ? undefined : "link"}
+      tabIndex={isOverlay ? undefined : 0}
+      onClick={() => {
+        if (!isOverlay && !isDragging) {
+          void navigate({ to: "/applications/$id", params: { id: application.id.toString() } });
+        }
+      }}
+      onKeyUp={(event) => {
+        if (isOverlay) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void navigate({ to: "/applications/$id", params: { id: application.id.toString() } });
+        }
+      }}
     >
       <p className="text-sm font-semibold leading-tight">{application.title}</p>
       <p className="mt-1 text-xs text-[var(--muted-foreground)]">{application.company?.name ?? "Unknown company"}</p>

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/query-keys";
 import {
+  createApplication,
   createNote,
   deleteNote,
   fetchApplication,
@@ -11,6 +12,7 @@ import {
   normalizeApplicationFilters,
   updateApplication,
   type ApplicationsFilters,
+  type CreateApplicationInput,
   type UpdateApplicationInput
 } from "./api";
 import type { Application, ApplicationStatus, ApplicationsResponse, Note, TagSummary } from "./model";
@@ -77,6 +79,18 @@ export function useUpdateApplication() {
 
   return useMutation({
     mutationFn: (input: UpdateApplicationInput) => updateApplication(input),
+    onSuccess: (response) => {
+      syncApplicationInCaches(queryClient, response.data);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    }
+  });
+}
+
+export function useCreateApplication() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateApplicationInput) => createApplication(input),
     onSuccess: (response) => {
       syncApplicationInCaches(queryClient, response.data);
       queryClient.invalidateQueries({ queryKey: ["applications"] });

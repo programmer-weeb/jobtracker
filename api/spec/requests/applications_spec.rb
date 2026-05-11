@@ -205,7 +205,7 @@ RSpec.describe "Applications", type: :request do
 
       expect(response).to have_http_status(:created)
       expect(JSON.parse(response.body).dig("data", "title")).to eq("Rails Engineer")
-      
+
       application = Application.find(JSON.parse(response.body).dig("data", "id"))
       event = application.events.first
       expect(event.kind).to eq("status_changed")

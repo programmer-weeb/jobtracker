@@ -51,7 +51,7 @@ export function ApplicationsPage() {
           onChange={(next) => {
             void navigate({
               to: "/applications",
-              search: toSearchFilters({ ...next, page: undefined })
+              search: toSearchFilters({ ...filters, ...next, page: undefined })
             });
           }}
           onSearchChange={(value) => {
@@ -60,9 +60,10 @@ export function ApplicationsPage() {
             }
 
             searchDebounceRef.current = window.setTimeout(() => {
+              const trimmed = value.trim();
               void navigate({
                 to: "/applications",
-                search: toSearchFilters({ ...filters, q: value.trim() || undefined, page: undefined })
+                search: toSearchFilters({ ...filters, q: trimmed || undefined, page: undefined })
               });
             }, 300);
           }}

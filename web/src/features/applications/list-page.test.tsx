@@ -142,7 +142,7 @@ describe("ApplicationsPage filters", () => {
     
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
       to: "/applications",
-      search: expect.objectContaining({ page: undefined })
+      search: expect.not.objectContaining({ page: expect.anything() })
     }));
   });
 });

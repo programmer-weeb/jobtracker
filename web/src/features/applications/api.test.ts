@@ -44,6 +44,7 @@ import { http } from "../../lib/http";
 import {
   fetchApplications,
   fetchApplication,
+  createApplication,
   updateApplication,
   moveApplication,
   fetchTags,
@@ -79,6 +80,14 @@ describe("api helpers", () => {
     vi.mocked(http.patch).mockResolvedValueOnce({ data: "app" });
     const result = await updateApplication({ id: 42, application: { title: "New" } });
     expect(http.patch).toHaveBeenCalledWith("/applications/42", { application: { title: "New" } });
+    expect(result).toBe("app");
+  });
+
+  it("createApplication calls POST /applications", async () => {
+    vi.mocked(http.post).mockResolvedValueOnce({ data: "app" });
+    const input = { company_id: 2, title: "Rails Engineer", status: "wishlist" as const, remote: true };
+    const result = await createApplication(input);
+    expect(http.post).toHaveBeenCalledWith("/applications", { application: input });
     expect(result).toBe("app");
   });
 
