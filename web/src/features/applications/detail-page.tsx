@@ -113,7 +113,7 @@ export function ApplicationDetailPage() {
         </Card>
       </div>
 
-      <Card className="h-fit space-y-3 bg-[var(--surface-tile-1)] p-5 text-white md:p-8">
+      <Card className="h-fit space-y-3 bg-white p-5 md:p-8">
         <h2 className="apple-display text-[28px] leading-tight">Activity</h2>
         <ActivityTimeline application={application} />
       </Card>
