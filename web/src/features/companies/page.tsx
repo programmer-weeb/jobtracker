@@ -151,7 +151,7 @@ function CompanyRow(props: {
       <td className="px-3 py-3">
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>Edit</Button>
-          <Button size="sm" variant="ghost" onClick={onRemove} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Delete"}</Button>
+          <Button size="sm" variant="destructive" onClick={onRemove} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Delete"}</Button>
         </div>
         {error ? <p className="mt-2 text-sm text-[var(--danger)]">{error}</p> : null}
       </td>
