@@ -111,10 +111,9 @@ class ApplicationsController < ApplicationController
   end
 
   def application_params
-    # Status is only allowed on create; update must use /move endpoint
-    allowed = [:company_id, :title, :source, :salary_min, :salary_max,
+    # Status is allowed on create and update
+    allowed = [:company_id, :title, :status, :source, :salary_min, :salary_max,
                :currency, :remote, :location, :url, :applied_at, tag_ids: []]
-    allowed.insert(2, :status) if action_name == "create"
     params.require(:application).permit(*allowed)
   end
 

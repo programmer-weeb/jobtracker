@@ -315,7 +315,7 @@ RSpec.describe "Applications", type: :request do
       expect(application.tags.map(&:id)).to eq([own_tag.id])
     end
 
-    it "ignores status and position in update params" do
+    it "allows status in update params but ignores position" do
       application = create(:application, user: user, company: company, status: :wishlist, position: 100)
 
       patch "/applications/#{application.id}", params: {
@@ -325,8 +325,12 @@ RSpec.describe "Applications", type: :request do
       expect(response).to have_http_status(:ok)
       application.reload
       expect(application.title).to eq("Updated")
-      expect(application.status).to eq("wishlist")
+      expect(application.status).to eq("applied")
       expect(application.position).to eq(100)
+
+      event = application.events.order(:created_at).last
+      expect(event.kind).to eq("status_changed")
+      expect(event.payload).to include("from" => "wishlist", "to" => "applied")
     end
   end
 
