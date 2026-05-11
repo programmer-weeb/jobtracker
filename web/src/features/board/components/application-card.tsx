@@ -58,7 +58,7 @@ export function ApplicationCard({
       <p className="mt-1 text-sm tracking-[-0.224px] text-[var(--muted-foreground)]">{application.company?.name ?? "Unknown company"}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {application.remote ? <span className="rounded-full bg-[var(--surface-pearl)] px-3 py-1 text-xs text-[var(--muted-foreground)]">Remote</span> : null}
-        {application.tags.slice(0, 2).map((tag) => (
+        {(application.tags ?? []).slice(0, 2).map((tag) => (
           <span key={tag.id} className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--muted-foreground)]">{tag.name}</span>
         ))}
       </div>
