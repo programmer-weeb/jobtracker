@@ -9,6 +9,7 @@ import { applicationsRoute } from "../routes/applications";
 import { applicationDetailRoute } from "../routes/application-detail";
 import { companiesRoute } from "../routes/companies";
 import { settingsRoute } from "../routes/settings";
+import { queryClient } from "./query-client";
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -20,6 +21,7 @@ export const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   context: {
+    queryClient,
     auth: {
       hydrated: false,
       isAuthenticated: false
