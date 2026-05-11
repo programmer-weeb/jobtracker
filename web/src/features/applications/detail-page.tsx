@@ -6,12 +6,12 @@ import { Card } from "../../components/ui/card";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import {
   sortNotes,
-  useApplication,
+  useSuspenseApplication,
   useCreateNote,
   useCreateTag,
   useDeleteNote,
   useDeleteTag,
-  useTags,
+  useSuspenseTags,
   useUpdateApplication,
   useMoveApplication
 } from "./hooks";
@@ -29,8 +29,8 @@ export function ApplicationDetailPage() {
   const [deleteNoteDialogOpen, setDeleteNoteDialogOpen] = useState(false);
   const [pendingNoteId, setPendingNoteId] = useState<number | null>(null);
 
-  const detailQuery = useApplication(applicationId);
-  const tagsQuery = useTags();
+  const { data: detailResponse } = useSuspenseApplication(applicationId);
+  const { data: tagsResponse } = useSuspenseTags();
   const updateMutation = useUpdateApplication();
   const moveMutation = useMoveApplication();
   const createNoteMutation = useCreateNote(applicationId);
@@ -38,20 +38,7 @@ export function ApplicationDetailPage() {
   const createTagMutation = useCreateTag();
   const deleteTagMutation = useDeleteTag();
 
-  if (detailQuery.isLoading) {
-    return <p className="text-sm">Loading application...</p>;
-  }
-
-  if (detailQuery.isError) {
-    return <p className="text-sm text-[var(--danger)]">Failed to load application.</p>;
-  }
-
-  const application = detailQuery.data?.data;
-
-  if (!application) {
-    return <p className="text-sm text-[var(--muted-foreground)]">Application not found.</p>;
-  }
-
+  const application = detailResponse.data;
   const notes = sortNotes(application.notes ?? []);
 
   return (
@@ -61,7 +48,7 @@ export function ApplicationDetailPage() {
           <DetailHeader application={application} />
           <DetailForm
             application={application}
-            availableTags={tagsQuery.data?.data ?? []}
+            availableTags={tagsResponse.data}
             isSaving={updateMutation.isPending || moveMutation.isPending || createTagMutation.isPending || deleteTagMutation.isPending}
             onCreateTag={async (name) => {
               const response = await createTagMutation.mutateAsync({ name, color: "#0066cc" });
@@ -89,7 +76,6 @@ export function ApplicationDetailPage() {
             }}
           />
           {updateMutation.isError ? <p className="text-xs text-[var(--danger)]">Save failed. Try again.</p> : null}
-          {tagsQuery.isError ? <p className="text-xs text-[var(--danger)]">Tags failed to load.</p> : null}
         </Card>
 
         <Card className="space-y-4 p-5 md:p-8">

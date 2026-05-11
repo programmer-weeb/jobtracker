@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { QueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/query-keys";
 import {
@@ -69,8 +69,22 @@ export function useApplication(id: number) {
   });
 }
 
+export function useSuspenseApplication(id: number) {
+  return useSuspenseQuery({
+    queryKey: queryKeys.applicationDetail(id),
+    queryFn: () => fetchApplication(id)
+  });
+}
+
 export function useTags() {
   return useQuery({
+    queryKey: queryKeys.tags,
+    queryFn: fetchTags
+  });
+}
+
+export function useSuspenseTags() {
+  return useSuspenseQuery({
     queryKey: queryKeys.tags,
     queryFn: fetchTags
   });
@@ -183,11 +197,21 @@ export interface MoveApplicationVariables {
 }
 
 export function useMoveApplication(
-  options?: UseMutationOptions<Application, Error, MoveApplicationVariables, { previous?: import("./model").ApplicationsResponse }>
+  options?: UseMutationOptions<Application, Error, MoveApplicationVariables, any>
 ) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, status, position }) => moveApplication({ id, status, position }),
-    ...options
+    mutationFn: ({ id, status, position }: MoveApplicationVariables) => moveApplication({ id, status, position }),
+    ...options,
+    onSuccess: async (data, variables, context) => {
+      syncApplicationInCaches(queryClient, data);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      
+      if (options?.onSuccess) {
+        await options.onSuccess(data, variables, context);
+      }
+    }
   });
 }
 
