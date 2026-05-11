@@ -4,20 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full text-[17px] font-normal leading-none tracking-[-0.374px] transition disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]",
-        secondary: "bg-[var(--surface-soft)] text-[var(--foreground)] hover:bg-[var(--surface-muted)]",
-        ghost: "text-[var(--foreground)] hover:bg-[var(--surface-soft)]",
-        outline: "border border-[var(--border)] bg-transparent hover:bg-[var(--surface-soft)] text-[var(--foreground)]",
+        default: "bg-[var(--brand)] text-white",
+        secondary: "border border-[var(--brand)] bg-transparent text-[var(--brand)]",
+        ghost: "bg-transparent text-[var(--brand)]",
+        outline: "border border-[var(--border)] bg-[var(--surface-pearl)] text-[var(--foreground)]",
         destructive: "bg-[var(--danger)] text-white hover:bg-[var(--danger)]/90"
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-6"
+        default: "px-[22px] py-[11px]",
+        sm: "min-h-9 px-[15px] py-2 text-sm tracking-[-0.224px]",
+        lg: "min-h-12 px-7 py-3.5 text-lg font-light tracking-normal"
       }
     },
     defaultVariants: {

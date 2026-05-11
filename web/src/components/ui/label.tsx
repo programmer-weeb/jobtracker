@@ -1,5 +1,5 @@
 import * as React from "react";
 
 export function Label({ className = "", ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={`text-sm font-medium text-[var(--foreground)] ${className}`} {...props} />;
+  return <label className={`text-sm font-semibold tracking-[-0.224px] text-[var(--foreground)] ${className}`} {...props} />;
 }
