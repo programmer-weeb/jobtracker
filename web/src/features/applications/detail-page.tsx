@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
+import { queryKeys } from "../../lib/query-keys";
 import { Card } from "../../components/ui/card";
 import { ConfirmDialog } from "../../components/confirm-dialog";
 import {
@@ -8,7 +10,8 @@ import {
   useCreateNote,
   useDeleteNote,
   useTags,
-  useUpdateApplication
+  useUpdateApplication,
+  useMoveApplication
 } from "./hooks";
 import { DetailHeader } from "./components/detail-header";
 import { DetailForm } from "./components/detail-form";
@@ -19,6 +22,7 @@ import { ActivityTimeline } from "./components/activity-timeline";
 export function ApplicationDetailPage() {
   const { id } = useParams({ from: "/authenticated/applications/$id" });
   const applicationId = Number(id);
+  const queryClient = useQueryClient();
 
   const [deleteNoteDialogOpen, setDeleteNoteDialogOpen] = useState(false);
   const [pendingNoteId, setPendingNoteId] = useState<number | null>(null);
@@ -26,6 +30,7 @@ export function ApplicationDetailPage() {
   const detailQuery = useApplication(applicationId);
   const tagsQuery = useTags();
   const updateMutation = useUpdateApplication();
+  const moveMutation = useMoveApplication();
   const createNoteMutation = useCreateNote(applicationId);
   const deleteNoteMutation = useDeleteNote(applicationId);
 
@@ -53,9 +58,23 @@ export function ApplicationDetailPage() {
           <DetailForm
             application={application}
             availableTags={tagsQuery.data?.data ?? []}
-            isSaving={updateMutation.isPending}
+            isSaving={updateMutation.isPending || moveMutation.isPending}
             onSubmit={async (values) => {
-              await updateMutation.mutateAsync({ id: application.id, application: values });
+              const { status, ...updateValues } = values;
+              
+              if (status !== application.status) {
+                await moveMutation.mutateAsync({
+                  id: application.id,
+                  status: status,
+                  position: 0,
+                  fromStatus: application.status
+                });
+              }
+              
+              await updateMutation.mutateAsync({ id: application.id, application: updateValues });
+              
+              // Force a clean refetch to ensure status and new events are fully loaded
+              await queryClient.invalidateQueries({ queryKey: queryKeys.applicationDetail(application.id) });
             }}
           />
           {updateMutation.isError ? <p className="text-xs text-[var(--danger)]">Save failed. Try again.</p> : null}

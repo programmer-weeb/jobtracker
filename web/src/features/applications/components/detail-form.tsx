@@ -4,11 +4,12 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import type { Application, TagSummary } from "../model";
+import { applicationStatuses, type Application, type ApplicationStatus, type TagSummary } from "../model";
 import { TagSelector } from "./tag-selector";
 
 const formSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
+  status: z.enum(applicationStatuses),
   source: z.string().trim().max(120, "Source too long").optional().or(z.literal("")),
   salary_min: z.string().optional().or(z.literal("")),
   salary_max: z.string().optional().or(z.literal("")),
@@ -28,6 +29,7 @@ interface DetailFormProps {
   isSaving: boolean;
   onSubmit: (values: {
     title: string;
+    status: ApplicationStatus;
     source: string | null;
     salary_min: number | null;
     salary_max: number | null;
@@ -66,6 +68,7 @@ export function DetailForm({ application, availableTags, isSaving, onSubmit }: D
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: application.title,
+      status: application.status,
       source: application.source ?? "",
       salary_min: application.salary_min?.toString() ?? "",
       salary_max: application.salary_max?.toString() ?? "",
@@ -85,6 +88,7 @@ export function DetailForm({ application, availableTags, isSaving, onSubmit }: D
   useEffect(() => {
     reset({
       title: application.title,
+      status: application.status,
       source: application.source ?? "",
       salary_min: application.salary_min?.toString() ?? "",
       salary_max: application.salary_max?.toString() ?? "",
@@ -105,6 +109,7 @@ export function DetailForm({ application, availableTags, isSaving, onSubmit }: D
       onSubmit={handleSubmit(async (values) => {
         await onSubmit({
           title: values.title.trim(),
+          status: values.status,
           source: toNullableString(values.source),
           salary_min: toNullableNumber(values.salary_min),
           salary_max: toNullableNumber(values.salary_max),
@@ -119,6 +124,17 @@ export function DetailForm({ application, availableTags, isSaving, onSubmit }: D
     >
       <Input {...register("title")} placeholder="Title" />
       {errors.title ? <p className="text-xs text-[var(--danger)]">{errors.title.message}</p> : null}
+
+      <select
+        {...register("status")}
+        className="flex h-10 w-full rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+      >
+        {applicationStatuses.map((status) => (
+          <option key={status} value={status}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </option>
+        ))}
+      </select>
 
       <Input {...register("source")} placeholder="Source" />
       <div className="grid gap-3 md:grid-cols-3">
