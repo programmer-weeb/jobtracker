@@ -21,22 +21,6 @@ export function AuthenticatedLayout({ children }: { children?: ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--foreground)]">
       <header className="sticky top-0 z-40">
-        <div className="bg-[var(--surface-black)] text-white">
-          <div className="mx-auto flex h-11 max-w-[1440px] items-center justify-between px-4 text-xs tracking-[-0.12px] md:px-8">
-            <Link to="/board" className="apple-display text-sm">JobTracker</Link>
-            <nav className="hidden items-center gap-5 md:flex">
-              {navItems.map((item) => (
-                <Link key={item.to} to={item.to} className="opacity-80 transition hover:opacity-100">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="flex items-center gap-4 opacity-90">
-              <Search size={15} aria-hidden="true" />
-              <ShoppingBag size={15} aria-hidden="true" />
-            </div>
-          </div>
-        </div>
 
         <div className="border-b border-black/10 bg-[rgba(245,245,247,0.8)] backdrop-blur-xl backdrop-saturate-150">
           <div className="mx-auto flex min-h-[52px] max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-2 md:px-8">
