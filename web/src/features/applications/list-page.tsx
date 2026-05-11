@@ -100,7 +100,16 @@ export function ApplicationsPage() {
                     </tr>
                   ) : (
                     applications.map((application) => (
-                      <tr key={application.id} className="border-t border-[var(--border)]">
+                      <tr
+                        key={application.id}
+                        className="cursor-pointer border-t border-[var(--border)] transition-colors hover:bg-[var(--muted)]/50"
+                        onClick={() => {
+                          void navigate({
+                            to: "/applications/$id",
+                            params: { id: application.id.toString() }
+                          });
+                        }}
+                      >
                         <td className="py-3 font-medium">{application.title}</td>
                         <td className="py-3 text-[var(--muted-foreground)]">{application.company.name}</td>
                         <td className="py-3 capitalize">{application.status}</td>
