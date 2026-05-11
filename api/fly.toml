@@ -10,7 +10,7 @@ primary_region = "sjc"
 # Set via: fly secrets set KEY=value
 # DATABASE_URL = "postgres://..."
 # DEVISE_JWT_SECRET_KEY = "generate-with: rails secret"
-# RAILS_MASTER_KEY = "see: config/master.key"
+# RAILS_MASTER_KEY = "store in password manager; never commit config/master.key"
 # CORS_ALLOWED_ORIGINS = "https://web-domain.vercel.app"
 
 [env]

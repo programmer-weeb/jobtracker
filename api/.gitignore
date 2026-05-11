@@ -1,1 +1,3 @@
 /.rspec_status
+/config/master.key
+/config/credentials/*.key
