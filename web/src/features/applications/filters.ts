@@ -1,67 +1,39 @@
+import { z } from "zod";
 import { applicationStatuses, type ApplicationStatus } from "./model";
-import type { ApplicationsFilters } from "./api";
 
-const statuses = new Set<ApplicationStatus>(applicationStatuses);
+export const applicationsFiltersSchema = z.object({
+  status: z.array(z.enum(applicationStatuses as [string, ...string[]])).optional(),
+  q: z.string().optional(),
+  tag: z.array(z.number()).optional(),
+  company: z.array(z.number()).optional(),
+  remote: z.boolean().optional(),
+  page: z.number().int().positive().optional(),
+  per_page: z.number().int().positive().optional()
+});
 
-function parseNumber(value: unknown) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : undefined;
-  }
+export type ApplicationsFilters = z.infer<typeof applicationsFiltersSchema>;
 
-  if (typeof value !== "string" || !value.trim()) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function toArray<T>(value: unknown): unknown[] {
-  if (value === undefined || value === null) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
+/**
+ * Normalizes search params from the URL into the type-safe ApplicationsFilters object.
+ * This is used by TanStack Router's validateSearch.
+ */
 export function normalizeFiltersFromSearch(search: Record<string, unknown>): ApplicationsFilters {
-  const rawStatus = toArray(search.status);
-  const status = rawStatus
-    .filter((s): s is ApplicationStatus => typeof s === "string" && statuses.has(s as ApplicationStatus));
-
-  const q = typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined;
-  const remote = search.remote === true || search.remote === "true" ? true : search.remote === false || search.remote === "false" ? false : undefined;
-
-  const page = parseNumber(search.page);
-  const per_page = parseNumber(search.per_page);
-
-  const tag = toArray(search.tag)
-    .map(parseNumber)
-    .filter((n): n is number => n !== undefined);
-
-  const company = toArray(search.company)
-    .map(parseNumber)
-    .filter((n): n is number => n !== undefined);
-
-  return {
-    status: status.length > 0 ? status : undefined,
-    q,
-    tag: tag.length > 0 ? tag : undefined,
-    company: company.length > 0 ? company : undefined,
-    remote,
-    page: page !== undefined && page > 0 ? page : undefined,
-    per_page: per_page !== undefined && per_page > 0 ? per_page : undefined
-  };
+  return applicationsFiltersSchema.parse({
+    ...search,
+    // Handle cases where single values might come as strings but schema expects arrays
+    status: search.status ? (Array.isArray(search.status) ? search.status : [search.status]) : undefined,
+    tag: search.tag ? (Array.isArray(search.tag) ? search.tag.map(Number) : [Number(search.tag)]) : undefined,
+    company: search.company ? (Array.isArray(search.company) ? search.company.map(Number) : [Number(search.company)]) : undefined,
+    remote: search.remote === "true" || search.remote === true ? true : search.remote === "false" || search.remote === false ? false : undefined,
+    page: search.page ? Number(search.page) : undefined,
+    per_page: search.per_page ? Number(search.per_page) : undefined
+  });
 }
 
+/**
+ * Converts filters back to a plain object for use in search params.
+ */
 export function toSearchFilters(filters: ApplicationsFilters) {
-  const search: Record<string, string | number | boolean | (string | number)[]> = {};
-
-  if (filters.status) search.status = filters.status;
-  if (filters.q) search.q = filters.q;
-  if (filters.tag !== undefined) search.tag = filters.tag;
-  if (filters.remote !== undefined) search.remote = filters.remote;
-  if (filters.company !== undefined) search.company = filters.company;
-  if (filters.page !== undefined) search.page = filters.page;
-  if (filters.per_page !== undefined) search.per_page = filters.per_page;
-
-  return search;
+  return filters;
 }
 
