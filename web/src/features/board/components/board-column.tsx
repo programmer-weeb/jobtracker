@@ -24,7 +24,7 @@ export function BoardColumn({
     <Card
       ref={setNodeRef}
       className={cn(
-        "flex min-h-72 flex-col gap-3 border border-[var(--border)] bg-[var(--canvas-parchment)] p-4",
+        "flex max-h-[750px] min-h-72 flex-col gap-3 border border-[var(--border)] bg-[var(--canvas-parchment)] p-4",
         isOver && "ring-2 ring-[var(--ring)]"
       )}
     >
@@ -34,7 +34,7 @@ export function BoardColumn({
       </div>
 
       <SortableContext items={applications.map((app) => cardId(app.id))} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1 scrollbar-thin">
           {applications.length === 0 ? (
             <div className="rounded-[18px] border border-dashed border-[var(--border)] bg-white/70 px-3 py-8 text-center text-sm text-[var(--muted-foreground)]">
               No applications
