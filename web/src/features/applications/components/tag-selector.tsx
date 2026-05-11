@@ -88,6 +88,8 @@ export function TagSelector({
           <Button
             type="button"
             variant="outline"
+            size="sm"
+            className="min-h-11 shrink-0 px-4 text-sm"
             onClick={() => void createTag()}
             disabled={isDisabled || !newTagName.trim()}
           >
