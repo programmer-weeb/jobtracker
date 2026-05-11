@@ -27,9 +27,18 @@ function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md p-6">
-        <h1 className="mb-1 text-2xl font-semibold">Login</h1>
+    <div className="grid min-h-screen bg-[var(--canvas-parchment)] lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="flex min-h-[56vh] flex-col items-center justify-center bg-[var(--surface-tile-1)] px-6 py-20 text-center text-white">
+        <p className="text-sm text-[var(--body-muted-dark)]">JobTracker</p>
+        <h1 className="apple-display mt-3 max-w-3xl text-[40px] leading-[1.1] md:text-[56px]">Applications, arranged with calm precision.</h1>
+        <p className="mt-4 max-w-2xl text-[24px] font-light leading-normal text-[var(--body-muted-dark)]">
+          A quiet board, focused records, and every next step in sight.
+        </p>
+      </section>
+
+      <section className="flex items-center justify-center p-4 md:p-8">
+      <Card className="w-full max-w-md p-6 md:p-8">
+        <h1 className="apple-display mb-1 text-[34px] leading-tight">Login</h1>
         <p className="mb-6 text-sm text-[var(--muted-foreground)]">Continue tracking applications.</p>
         <form className="space-y-4" onSubmit={onSubmit}>
           <div>
@@ -54,6 +63,7 @@ function LoginPage() {
           New here? <Link className="text-[var(--brand-700)] underline" to="/signup">Create account</Link>
         </p>
       </Card>
+      </section>
     </div>
   );
 }

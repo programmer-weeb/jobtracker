@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
-import { BriefcaseBusiness, Building2, KanbanSquare, Settings } from "lucide-react";
+import { BriefcaseBusiness, Building2, KanbanSquare, Search, Settings, ShoppingBag } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { useLogout } from "../../features/auth/hooks";
@@ -15,49 +15,71 @@ const navItems = [
 export function AuthenticatedLayout({ children }: { children?: ReactNode }) {
   const location = useLocation();
   const logoutMutation = useLogout();
+  const currentItem = navItems.find((item) => location.pathname === item.to);
+  const pageTitle = currentItem?.label ?? "Application";
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col md:flex-row">
-        <aside className="border-b border-[var(--border)] bg-white/90 p-4 backdrop-blur md:min-h-screen md:w-72 md:border-b-0 md:border-r">
-          <h1 className="text-xl font-semibold tracking-tight">JobTracker</h1>
-          <nav className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition",
-                    active
-                      ? "bg-[var(--brand-50)] text-[var(--brand-700)]"
-                      : "text-[var(--muted-foreground)] hover:bg-[var(--surface-soft)]"
-                  )}
-                >
-                  <Icon size={16} />
+    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--foreground)]">
+      <header className="sticky top-0 z-40">
+        <div className="bg-[var(--surface-black)] text-white">
+          <div className="mx-auto flex h-11 max-w-[1440px] items-center justify-between px-4 text-xs tracking-[-0.12px] md:px-8">
+            <Link to="/board" className="apple-display text-sm">JobTracker</Link>
+            <nav className="hidden items-center gap-5 md:flex">
+              {navItems.map((item) => (
+                <Link key={item.to} to={item.to} className="opacity-80 transition hover:opacity-100">
                   {item.label}
                 </Link>
-              );
-            })}
-          </nav>
-          <Button
-            className="mt-4 w-full"
-            variant="secondary"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-          >
-            Logout
-          </Button>
-        </aside>
-        <div className="flex-1 p-4 md:p-8">
-          <header className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">{location.pathname.slice(1) || "Dashboard"}</h2>
-          </header>
-          {children ?? <Outlet />}
+              ))}
+            </nav>
+            <div className="flex items-center gap-4 opacity-90">
+              <Search size={15} aria-hidden="true" />
+              <ShoppingBag size={15} aria-hidden="true" />
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div className="border-b border-black/10 bg-[rgba(245,245,247,0.8)] backdrop-blur-xl backdrop-saturate-150">
+          <div className="mx-auto flex min-h-[52px] max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-2 md:px-8">
+            <div className="flex items-center gap-3">
+              <span className="apple-display text-[21px] leading-none">{pageTitle}</span>
+              <span className="hidden text-sm text-[var(--muted-foreground)] sm:inline">Focused application tracking</span>
+            </div>
+            <nav className="flex flex-wrap items-center gap-1 md:gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = location.pathname === item.to;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={cn(
+                      "inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-sm tracking-[-0.224px]",
+                      active
+                        ? "bg-[var(--brand)] text-white"
+                        : "text-[var(--foreground)] hover:text-[var(--brand)]"
+                    )}
+                  >
+                    <Icon size={15} />
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </Link>
+                );
+              })}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? "Signing out" : "Logout"}
+              </Button>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+        {children ?? <Outlet />}
+      </main>
     </div>
   );
 }

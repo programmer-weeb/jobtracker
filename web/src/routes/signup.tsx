@@ -37,9 +37,18 @@ function SignupPage() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md p-6">
-        <h1 className="mb-1 text-2xl font-semibold">Sign up</h1>
+    <div className="grid min-h-screen bg-[var(--canvas-parchment)] lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="flex min-h-[56vh] flex-col items-center justify-center bg-white px-6 py-20 text-center">
+        <p className="text-sm text-[var(--muted-foreground)]">JobTracker</p>
+        <h1 className="apple-display mt-3 max-w-3xl text-[40px] leading-[1.1] md:text-[56px]">Build a cleaner job search record.</h1>
+        <p className="mt-4 max-w-2xl text-[24px] font-light leading-normal text-[var(--muted-foreground)]">
+          Companies, applications, notes, and movement in one focused workspace.
+        </p>
+      </section>
+
+      <section className="flex items-center justify-center p-4 md:p-8">
+      <Card className="w-full max-w-md p-6 md:p-8">
+        <h1 className="apple-display mb-1 text-[34px] leading-tight">Sign up</h1>
         <p className="mb-6 text-sm text-[var(--muted-foreground)]">Create your JobTracker account.</p>
         <form className="space-y-4" onSubmit={onSubmit}>
           <div><Label htmlFor="name">Name</Label><Input id="name" {...form.register("name")} /></div>
@@ -60,6 +69,7 @@ function SignupPage() {
           Already registered? <Link className="text-[var(--brand-700)] underline" to="/login">Sign in</Link>
         </p>
       </Card>
+      </section>
     </div>
   );
 }
