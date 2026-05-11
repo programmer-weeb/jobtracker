@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import type { ApplicationsFilters } from "../api";
@@ -20,13 +21,21 @@ function toSelectValue(value: string | number | undefined) {
 
 export function ApplicationsFiltersBar(props: FiltersBarProps) {
   const { filters, companies, tags, onChange, onSearchChange, onReset } = props;
+  const [searchValue, setSearchValue] = useState(filters.q ?? "");
+
+  useEffect(() => {
+    setSearchValue(filters.q ?? "");
+  }, [filters.q]);
 
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
       <Input
         placeholder="Search title, company, source"
-        value={filters.q ?? ""}
-        onChange={(event) => onSearchChange(event.target.value)}
+        value={searchValue}
+        onChange={(event) => {
+          setSearchValue(event.target.value);
+          onSearchChange(event.target.value);
+        }}
         aria-label="Search applications"
         className="xl:col-span-2"
       />

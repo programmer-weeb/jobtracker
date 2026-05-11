@@ -4,6 +4,10 @@ import type { ApplicationsFilters } from "./api";
 const statuses = new Set<ApplicationStatus>(applicationStatuses);
 
 function parseNumber(value: unknown) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
   if (typeof value !== "string" || !value.trim()) {
     return undefined;
   }
@@ -17,7 +21,7 @@ export function normalizeFiltersFromSearch(search: Record<string, unknown>): App
     ? (search.status as ApplicationStatus)
     : undefined;
   const q = typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined;
-  const remote = search.remote === "true" ? true : search.remote === "false" ? false : undefined;
+  const remote = search.remote === true || search.remote === "true" ? true : search.remote === false || search.remote === "false" ? false : undefined;
 
   const page = parseNumber(search.page);
   const per_page = parseNumber(search.per_page);
