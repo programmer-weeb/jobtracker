@@ -3,8 +3,10 @@ import type { QueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/query-keys";
 import {
   createApplication,
+  createTag,
   createNote,
   deleteNote,
+  deleteTag,
   fetchApplication,
   fetchApplications,
   fetchTags,
@@ -71,6 +73,37 @@ export function useTags() {
   return useQuery({
     queryKey: queryKeys.tags,
     queryFn: fetchTags
+  });
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { name: string; color: string }) => createTag(input),
+    onSuccess: (response) => {
+      queryClient.setQueryData<{ data: TagSummary[] }>(queryKeys.tags, (current) => {
+        const currentTags = current?.data ?? [];
+        return {
+          data: [...currentTags, response.data].sort((a, b) => a.name.localeCompare(b.name))
+        };
+      });
+    }
+  });
+}
+
+export function useDeleteTag() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deleteTag(id),
+    onSuccess: (_response, id) => {
+      queryClient.setQueryData<{ data: TagSummary[] }>(queryKeys.tags, (current) => {
+        if (!current) return current;
+        return { data: current.data.filter((tag) => tag.id !== id) };
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    }
   });
 }
 

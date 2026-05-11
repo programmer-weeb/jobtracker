@@ -8,7 +8,9 @@ import {
   sortNotes,
   useApplication,
   useCreateNote,
+  useCreateTag,
   useDeleteNote,
+  useDeleteTag,
   useTags,
   useUpdateApplication,
   useMoveApplication
@@ -33,6 +35,8 @@ export function ApplicationDetailPage() {
   const moveMutation = useMoveApplication();
   const createNoteMutation = useCreateNote(applicationId);
   const deleteNoteMutation = useDeleteNote(applicationId);
+  const createTagMutation = useCreateTag();
+  const deleteTagMutation = useDeleteTag();
 
   if (detailQuery.isLoading) {
     return <p className="text-sm">Loading application...</p>;
@@ -58,7 +62,14 @@ export function ApplicationDetailPage() {
           <DetailForm
             application={application}
             availableTags={tagsQuery.data?.data ?? []}
-            isSaving={updateMutation.isPending || moveMutation.isPending}
+            isSaving={updateMutation.isPending || moveMutation.isPending || createTagMutation.isPending || deleteTagMutation.isPending}
+            onCreateTag={async (name) => {
+              const response = await createTagMutation.mutateAsync({ name, color: "#0066cc" });
+              return response.data;
+            }}
+            onDeleteTag={async (tagId) => {
+              await deleteTagMutation.mutateAsync(tagId);
+            }}
             onSubmit={async (values) => {
               const { status, ...updateValues } = values;
               

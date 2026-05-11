@@ -48,6 +48,8 @@ import {
   updateApplication,
   moveApplication,
   fetchTags,
+  createTag,
+  deleteTag,
   createNote,
   deleteNote
 } from "./api";
@@ -103,6 +105,19 @@ describe("api helpers", () => {
     const result = await fetchTags();
     expect(http.get).toHaveBeenCalledWith("/tags");
     expect(result).toBe("tags");
+  });
+
+  it("createTag calls POST /tags", async () => {
+    vi.mocked(http.post).mockResolvedValueOnce({ data: "tag" });
+    const result = await createTag({ name: "urgent", color: "#0066cc" });
+    expect(http.post).toHaveBeenCalledWith("/tags", { tag: { name: "urgent", color: "#0066cc" } });
+    expect(result).toBe("tag");
+  });
+
+  it("deleteTag calls DELETE /tags/:id", async () => {
+    vi.mocked(http.delete).mockResolvedValueOnce({});
+    await deleteTag(5);
+    expect(http.delete).toHaveBeenCalledWith("/tags/5");
   });
 
   it("createNote calls POST /applications/:id/notes", async () => {

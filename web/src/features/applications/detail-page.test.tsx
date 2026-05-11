@@ -14,6 +14,8 @@ vi.mock("@tanstack/react-router", async () => {
 
 const fetchApplicationMock = vi.fn();
 const fetchTagsMock = vi.fn();
+const createTagMock = vi.fn();
+const deleteTagMock = vi.fn();
 const updateApplicationMock = vi.fn();
 const createNoteMock = vi.fn();
 const deleteNoteMock = vi.fn();
@@ -24,6 +26,8 @@ vi.mock("./api", () => ({
   moveApplication: vi.fn(),
   fetchApplication: (...args: unknown[]) => fetchApplicationMock(...args),
   fetchTags: (...args: unknown[]) => fetchTagsMock(...args),
+  createTag: (...args: unknown[]) => createTagMock(...args),
+  deleteTag: (...args: unknown[]) => deleteTagMock(...args),
   updateApplication: (...args: unknown[]) => updateApplicationMock(...args),
   createNote: (...args: unknown[]) => createNoteMock(...args),
   deleteNote: (...args: unknown[]) => deleteNoteMock(...args)
@@ -76,6 +80,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   fetchApplicationMock.mockResolvedValue({ data: baseApplication });
   fetchTagsMock.mockResolvedValue({ data: [{ id: 1, name: "urgent", color: "#ff0000" }, { id: 2, name: "onsite", color: "#00ff00" }] });
+  createTagMock.mockResolvedValue({ data: { id: 3, name: "frontend", color: "#0066cc" } });
+  deleteTagMock.mockResolvedValue({});
   updateApplicationMock.mockResolvedValue({ data: baseApplication });
   createNoteMock.mockImplementation((id, body) => {
     const newNote = { id: 11, application_id: id, body, created_at: "2026-05-04T10:00:00Z", updated_at: "2026-05-04T10:00:00Z" };
@@ -128,7 +134,7 @@ describe("ApplicationDetailPage", () => {
     await waitFor(() => expect(createNoteMock).toHaveBeenCalledWith(42, "Followed up"));
     expect(await screen.findByText("Followed up")).toBeInTheDocument();
 
-    const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+    const deleteButtons = screen.getAllByRole("button", { name: /^delete$/i });
     fireEvent.click(deleteButtons[0]);
 
     // Click confirm button in dialog
@@ -148,6 +154,23 @@ describe("ApplicationDetailPage", () => {
 
     await waitFor(() => expect(updateApplicationMock).toHaveBeenCalled());
     expect(updateApplicationMock.mock.calls[0][0].application.tag_ids).toEqual([1, 2]);
+  });
+
+  it("creates and deletes tags while editing", async () => {
+    renderPage();
+
+    await screen.findByRole("heading", { name: "Backend Engineer" });
+    fireEvent.change(screen.getByLabelText("New tag name"), { target: { value: "frontend" } });
+    fireEvent.click(screen.getByRole("button", { name: /add tag/i }));
+
+    await waitFor(() => expect(createTagMock).toHaveBeenCalledWith({ name: "frontend", color: "#0066cc" }));
+
+    fireEvent.click(screen.getByLabelText("Delete tag urgent"));
+    await waitFor(() => expect(deleteTagMock).toHaveBeenCalledWith(1));
+
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await waitFor(() => expect(updateApplicationMock).toHaveBeenCalled());
+    expect(updateApplicationMock.mock.calls[0][0].application.tag_ids).toEqual([3]);
   });
 
   it("renders empty timeline state when no events and no applied_at", async () => {

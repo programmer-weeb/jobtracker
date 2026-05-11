@@ -5,6 +5,8 @@ import { ApplicationsPage } from "./list-page";
 
 const fetchApplicationsMock = vi.fn();
 const fetchTagsMock = vi.fn();
+const createTagMock = vi.fn();
+const deleteTagMock = vi.fn();
 const fetchCompaniesMock = vi.fn();
 const navigateMock = vi.fn();
 const useSearchMock = vi.fn();
@@ -21,6 +23,8 @@ vi.mock("@tanstack/react-router", async () => {
 vi.mock("./api", () => ({
   fetchApplications: (...args: unknown[]) => fetchApplicationsMock(...args),
   fetchTags: (...args: unknown[]) => fetchTagsMock(...args),
+  createTag: (...args: unknown[]) => createTagMock(...args),
+  deleteTag: (...args: unknown[]) => deleteTagMock(...args),
   fetchApplication: vi.fn(),
   updateApplication: vi.fn(),
   moveApplication: vi.fn(),

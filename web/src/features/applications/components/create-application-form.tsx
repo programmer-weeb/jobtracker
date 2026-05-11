@@ -12,6 +12,8 @@ interface CreateApplicationFormProps {
   isSaving: boolean;
   onCancel: () => void;
   onSubmit: (values: CreateApplicationInput) => Promise<void>;
+  onCreateTag?: (name: string) => Promise<TagSummary>;
+  onDeleteTag?: (tagId: number) => Promise<void>;
 }
 
 interface CreateFormState {
@@ -39,7 +41,15 @@ function toNullableString(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
-export function CreateApplicationForm({ companies, tags, isSaving, onCancel, onSubmit }: CreateApplicationFormProps) {
+export function CreateApplicationForm({
+  companies,
+  tags,
+  isSaving,
+  onCancel,
+  onSubmit,
+  onCreateTag,
+  onDeleteTag
+}: CreateApplicationFormProps) {
   const [form, setForm] = useState<CreateFormState>(() => ({
     ...emptyForm,
     company_id: companies[0]?.id.toString() ?? ""
@@ -151,6 +161,8 @@ export function CreateApplicationForm({ companies, tags, isSaving, onCancel, onS
           tags={tags}
           selectedIds={form.tag_ids}
           onChange={(tagIds) => setForm((current) => ({ ...current, tag_ids: tagIds }))}
+          onCreateTag={onCreateTag}
+          onDeleteTag={onDeleteTag}
           disabled={isSaving}
         />
       </div>

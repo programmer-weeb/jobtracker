@@ -27,6 +27,8 @@ interface DetailFormProps {
   application: Application;
   availableTags: TagSummary[];
   isSaving: boolean;
+  onCreateTag?: (name: string) => Promise<TagSummary>;
+  onDeleteTag?: (tagId: number) => Promise<void>;
   onSubmit: (values: {
     title: string;
     status: ApplicationStatus;
@@ -56,7 +58,14 @@ function toNullableString(value: string | undefined): string | null {
   return next ? next : null;
 }
 
-export function DetailForm({ application, availableTags, isSaving, onSubmit }: DetailFormProps) {
+export function DetailForm({
+  application,
+  availableTags,
+  isSaving,
+  onCreateTag,
+  onDeleteTag,
+  onSubmit
+}: DetailFormProps) {
   const {
     register,
     handleSubmit,
@@ -157,6 +166,8 @@ export function DetailForm({ application, availableTags, isSaving, onSubmit }: D
         tags={availableTags}
         selectedIds={selectedTagIds ?? []}
         onChange={(tagIds) => setValue("tag_ids", tagIds)}
+        onCreateTag={onCreateTag}
+        onDeleteTag={onDeleteTag}
         disabled={isSaving}
       />
 

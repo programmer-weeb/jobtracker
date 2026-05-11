@@ -4,6 +4,7 @@ import type {
   ApplicationStatus,
   ApplicationsResponse,
   NoteResponse,
+  TagSummary,
   TagsResponse
 } from "./model";
 
@@ -101,6 +102,17 @@ export async function moveApplication(input: MoveApplicationInput) {
 export async function fetchTags() {
   const { data } = await http.get<TagsResponse>("/tags");
   return data;
+}
+
+export async function createTag(input: { name: string; color: string }) {
+  const { data } = await http.post<{ data: TagSummary }>("/tags", {
+    tag: input
+  });
+  return data;
+}
+
+export async function deleteTag(id: number) {
+  await http.delete(`/tags/${id}`);
 }
 
 export async function createNote(applicationId: number, body: string) {

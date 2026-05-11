@@ -89,4 +89,37 @@ describe("CreateApplicationForm", () => {
     expect(onCancel).toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("creates, selects, and deletes tags from the form", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const onCreateTag = vi.fn().mockResolvedValue({ id: 99, name: "new tag", color: "#0066cc" });
+    const onDeleteTag = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <CreateApplicationForm
+        companies={companies}
+        tags={tags}
+        isSaving={false}
+        onCancel={vi.fn()}
+        onSubmit={onSubmit}
+        onCreateTag={onCreateTag}
+        onDeleteTag={onDeleteTag}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("New tag name"), { target: { value: "new tag" } });
+    fireEvent.click(screen.getByRole("button", { name: /add tag/i }));
+
+    await waitFor(() => expect(onCreateTag).toHaveBeenCalledWith("new tag"));
+
+    fireEvent.click(screen.getByLabelText("Delete tag urgent"));
+    await waitFor(() => expect(onDeleteTag).toHaveBeenCalledWith(5));
+
+    fireEvent.change(screen.getByLabelText("Application title"), { target: { value: "Rails Engineer" } });
+    fireEvent.click(screen.getByRole("button", { name: /create application/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      tag_ids: [99]
+    })));
+  });
 });
