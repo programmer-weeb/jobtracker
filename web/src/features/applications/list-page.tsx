@@ -1,23 +1,26 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { useCompanies } from "../companies/hooks";
 import { applicationsRoute } from "../../routes/applications";
 import { ApplicationsFiltersBar, type ApplicationFiltersState } from "./components/filters-bar";
+import { CreateApplicationForm } from "./components/create-application-form";
 import { toSearchFilters } from "./filters";
-import { useApplications, useTags } from "./hooks";
+import { useApplications, useCreateApplication, useTags } from "./hooks";
 
 export function ApplicationsPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: applicationsRoute.id });
 
   const searchDebounceRef = useRef<number | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const filters = useMemo(() => ({ ...search }) as ApplicationFiltersState, [search]);
 
   const { data, isLoading, isError, error } = useApplications(filters);
   const { data: tagsResponse } = useTags();
   const { data: companiesResponse } = useCompanies();
+  const createApplicationMutation = useCreateApplication();
 
   const applications = data?.data ?? [];
   const tags = tagsResponse?.data ?? [];
@@ -48,7 +51,37 @@ export function ApplicationsPage() {
         <p className="mx-auto mt-4 max-w-2xl text-[24px] font-light leading-normal text-[var(--body-muted-dark)]">
           Search, filter, and open the exact role record you need.
         </p>
+        <div className="mt-6 flex justify-center">
+          <Button onClick={() => setIsCreateOpen(true)}>New application</Button>
+        </div>
       </section>
+
+      {isCreateOpen ? (
+        <Card className="p-4 md:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="apple-display text-[28px] leading-tight">Create application</h2>
+              <p className="mt-1 text-sm text-[var(--muted-foreground)]">Add a role to the tracker and place it on the board.</p>
+            </div>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsCreateOpen(false)}>
+              Close
+            </Button>
+          </div>
+          <CreateApplicationForm
+            companies={companies}
+            tags={tags}
+            isSaving={createApplicationMutation.isPending}
+            onCancel={() => setIsCreateOpen(false)}
+            onSubmit={async (values) => {
+              await createApplicationMutation.mutateAsync(values);
+              setIsCreateOpen(false);
+            }}
+          />
+          {createApplicationMutation.isError ? (
+            <p className="mt-3 text-sm text-[var(--danger)]">Could not create application. Check the fields and try again.</p>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card className="p-4 md:p-6">
         <ApplicationsFiltersBar
