@@ -16,21 +16,35 @@ function parseNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function toArray<T>(value: unknown): unknown[] {
+  if (value === undefined || value === null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 export function normalizeFiltersFromSearch(search: Record<string, unknown>): ApplicationsFilters {
-  const status = typeof search.status === "string" && statuses.has(search.status as ApplicationStatus)
-    ? (search.status as ApplicationStatus)
-    : undefined;
+  const rawStatus = toArray(search.status);
+  const status = rawStatus
+    .filter((s): s is ApplicationStatus => typeof s === "string" && statuses.has(s as ApplicationStatus));
+
   const q = typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined;
   const remote = search.remote === true || search.remote === "true" ? true : search.remote === false || search.remote === "false" ? false : undefined;
 
   const page = parseNumber(search.page);
   const per_page = parseNumber(search.per_page);
 
+  const tag = toArray(search.tag)
+    .map(parseNumber)
+    .filter((n): n is number => n !== undefined);
+
+  const company = toArray(search.company)
+    .map(parseNumber)
+    .filter((n): n is number => n !== undefined);
+
   return {
-    status,
+    status: status.length > 0 ? status : undefined,
     q,
-    tag: parseNumber(search.tag),
-    company: parseNumber(search.company),
+    tag: tag.length > 0 ? tag : undefined,
+    company: company.length > 0 ? company : undefined,
     remote,
     page: page !== undefined && page > 0 ? page : undefined,
     per_page: per_page !== undefined && per_page > 0 ? per_page : undefined
@@ -38,7 +52,7 @@ export function normalizeFiltersFromSearch(search: Record<string, unknown>): App
 }
 
 export function toSearchFilters(filters: ApplicationsFilters) {
-  const search: Record<string, string | number | boolean> = {};
+  const search: Record<string, string | number | boolean | (string | number)[]> = {};
 
   if (filters.status) search.status = filters.status;
   if (filters.q) search.q = filters.q;

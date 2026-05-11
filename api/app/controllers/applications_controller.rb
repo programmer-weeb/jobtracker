@@ -151,14 +151,15 @@ class ApplicationsController < ApplicationController
     applications = policy_scope(Application).includes(:company, :tags).order(created_at: :desc)
     authorize Application
 
-    status = normalized_status_param
-    applications = applications.where(status: status) if status
+    statuses = Array(params[:status]).reject(&:blank?)
+    valid_statuses = statuses.select { |s| Application.statuses.key?(s) }
+    applications = applications.where(status: valid_statuses) if valid_statuses.any?
 
-    company_id = normalized_integer_param(params[:company])
-    applications = applications.where(company_id: company_id) if company_id
+    company_ids = Array(params[:company]).reject(&:blank?).map { |id| Integer(id, exception: false) }.compact
+    applications = applications.where(company_id: company_ids) if company_ids.any?
 
-    tag_id = normalized_integer_param(params[:tag])
-    applications = applications.joins(:tags).where(tags: { id: tag_id }) if tag_id
+    tag_ids = Array(params[:tag]).reject(&:blank?).map { |id| Integer(id, exception: false) }.compact
+    applications = applications.joins(:tags).where(tags: { id: tag_ids }) if tag_ids.any?
 
     remote = normalized_remote_param
     if remote != :invalid

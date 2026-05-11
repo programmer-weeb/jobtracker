@@ -28,6 +28,18 @@ RSpec.describe "Applications", type: :request do
       expect(ids).to eq([keep.id])
     end
 
+    it "filters by multiple statuses" do
+      wishlist = create(:application, user: user, company: company, status: :wishlist)
+      applied = create(:application, user: user, company: company, status: :applied)
+      create(:application, user: user, company: company, status: :interview)
+
+      get "/applications?status[]=wishlist&status[]=applied", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(wishlist.id, applied.id)
+      expect(ids.size).to eq(2)
+    end
+
     it "ignores unknown status filter" do
       first = create(:application, user: user, company: company, status: :applied)
       second = create(:application, user: user, company: company, status: :interview)
@@ -49,6 +61,20 @@ RSpec.describe "Applications", type: :request do
       expect(ids).to eq([keep.id])
     end
 
+    it "filters by multiple companies" do
+      company1 = create(:company, user: user)
+      company2 = create(:company, user: user)
+      keep1 = create(:application, user: user, company: company1)
+      keep2 = create(:application, user: user, company: company2)
+      create(:application, user: user, company: company)
+
+      get "/applications?company[]=#{company1.id}&company[]=#{company2.id}", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(keep1.id, keep2.id)
+      expect(ids.size).to eq(2)
+    end
+
     it "filters by tag" do
       tag = create(:tag, user: user)
       keep = create(:application, user: user, company: company)
@@ -59,6 +85,22 @@ RSpec.describe "Applications", type: :request do
 
       ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
       expect(ids).to eq([keep.id])
+    end
+
+    it "filters by multiple tags" do
+      tag1 = create(:tag, user: user)
+      tag2 = create(:tag, user: user)
+      keep1 = create(:application, user: user, company: company)
+      keep1.tags << tag1
+      keep2 = create(:application, user: user, company: company)
+      keep2.tags << tag2
+      create(:application, user: user, company: company)
+
+      get "/applications?tag[]=#{tag1.id}&tag[]=#{tag2.id}", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to include(keep1.id, keep2.id)
+      expect(ids.size).to eq(2)
     end
 
     it "filters by remote flag" do
