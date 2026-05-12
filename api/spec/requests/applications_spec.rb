@@ -18,6 +18,17 @@ RSpec.describe "Applications", type: :request do
       expect(ids.size).to eq(1)
     end
 
+    it "orders applications by most recently updated first" do
+      oldest = create(:application, user: user, company: company, updated_at: 3.days.ago)
+      newest = create(:application, user: user, company: company, updated_at: 1.hour.ago)
+      middle = create(:application, user: user, company: company, updated_at: 1.day.ago)
+
+      get "/applications", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids).to eq([ newest.id, middle.id, oldest.id ])
+    end
+
     it "filters by status" do
       keep = create(:application, user: user, company: company, status: :applied)
       create(:application, user: user, company: company, status: :interview)
@@ -355,6 +366,49 @@ RSpec.describe "Applications", type: :request do
       application.reload
       expect(application.company_id).to eq(own_company.id)
       expect(application.tags.map(&:id)).to eq([own_tag.id])
+    end
+
+    it "treats tag changes as application updates for recent ordering" do
+      older_application = create(:application, user: user, company: company)
+      application = create(:application, user: user, company: company)
+      tag = create(:tag, user: user)
+
+      older_application.update_column(:updated_at, 1.hour.ago)
+      application.update_column(:updated_at, 2.hours.ago)
+
+      patch "/applications/#{application.id}", params: {
+        application: { tag_ids: [ tag.id ] }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(application.reload.updated_at).to be > older_application.reload.updated_at
+
+      get "/applications", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids.first).to eq(application.id)
+    end
+
+    it "treats tag removals as application updates for recent ordering" do
+      tag = create(:tag, user: user)
+      older_application = create(:application, user: user, company: company)
+      application = create(:application, user: user, company: company, tags: [ tag ])
+
+      older_application.update_column(:updated_at, 1.hour.ago)
+      application.update_column(:updated_at, 2.hours.ago)
+
+      patch "/applications/#{application.id}", params: {
+        application: { tag_ids: [] }
+      }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(application.reload.tags).to be_empty
+      expect(application.updated_at).to be > older_application.reload.updated_at
+
+      get "/applications", headers: headers, as: :json
+
+      ids = JSON.parse(response.body).fetch("data").map { |row| row.fetch("id") }
+      expect(ids.first).to eq(application.id)
     end
 
     it "allows status in update params but ignores position" do

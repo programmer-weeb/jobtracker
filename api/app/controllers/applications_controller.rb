@@ -44,9 +44,12 @@ class ApplicationsController < ApplicationController
 
   def update
     authorize @application
+    update_attrs = sanitized_application_params
     previous_status = @application.status
+    previous_tag_ids = update_attrs.key?("tag_ids") ? @application.tag_ids.sort : nil
     Application.transaction do
-      if @application.update(sanitized_application_params)
+      if @application.update(update_attrs)
+        @application.touch if previous_tag_ids && previous_tag_ids != @application.tag_ids.sort
         create_status_changed_event!(@application, previous_status: previous_status) if previous_status != @application.status
         render json: { data: application_payload(@application) }, status: :ok
       else
@@ -148,7 +151,7 @@ class ApplicationsController < ApplicationController
   end
 
   def filtered_applications
-    applications = policy_scope(Application).includes(:company, :tags).order(created_at: :desc)
+    applications = policy_scope(Application).includes(:company, :tags).order(updated_at: :desc, id: :desc)
     authorize Application
 
     statuses = Array(params[:status]).reject(&:blank?)
