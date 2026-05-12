@@ -61,4 +61,33 @@ RSpec.describe Application, type: :model do
       expect(application.reload.applied_at).to be_nil
     end
   end
+
+  describe "follow-up reminder callback" do
+    it "schedules a follow-up reminder when created as applied" do
+      expect {
+        create(:application, status: :applied)
+      }.to have_enqueued_job(FollowUpReminderJob)
+
+      job = enqueued_jobs.find { |enqueued_job| enqueued_job[:job] == FollowUpReminderJob }
+      expect(job[:at]).to be_within(1.second).of(7.days.from_now.to_f)
+    end
+
+    it "schedules a follow-up reminder when status changes to applied" do
+      application = create(:application, status: :wishlist)
+      clear_enqueued_jobs
+
+      expect {
+        application.update!(status: :applied)
+      }.to have_enqueued_job(FollowUpReminderJob).with(application)
+    end
+
+    it "does not schedule a follow-up reminder for other status changes" do
+      application = create(:application, status: :wishlist)
+      clear_enqueued_jobs
+
+      expect {
+        application.update!(status: :interview)
+      }.not_to have_enqueued_job(FollowUpReminderJob)
+    end
+  end
 end
