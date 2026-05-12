@@ -245,7 +245,7 @@ This project includes a `render.yaml` Blueprint that automates the creation of a
    - **Rails 8 API** (Dockerized)
    - **Background Worker** (for Solid Queue processing)
    - **React Static Site**
-4. Set the `RAILS_MASTER_KEY` environment variable from `api/config/master.key`.
+4. Set the `RAILS_MASTER_KEY` environment variable in Render's dashboard using the value from your local `api/config/master.key` file
 
 ### API on Fly.io
 
