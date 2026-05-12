@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { MultiSelect } from "../../../components/ui/multi-select";
-import type { ApplicationsFilters } from "../api";
+import type { ApplicationsFilters } from "../filters";
 import { applicationStatuses, type CompanySummary, type ApplicationStatus, type TagSummary } from "../model";
 
 export type ApplicationFiltersState = ApplicationsFilters;
@@ -56,6 +56,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
       <SearchField key={filters.q ?? ""} value={filters.q ?? ""} onSearchChange={onSearchChange} />
 
       <MultiSelect
+        ariaLabel="Filter by status"
         placeholder="All statuses"
         options={statusOptions}
         selected={toArray(filters.status)}
@@ -63,6 +64,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
       />
 
       <MultiSelect
+        ariaLabel="Filter by tag"
         placeholder="All tags"
         options={tagOptions}
         selected={toArray(filters.tag)}
@@ -70,6 +72,7 @@ export function ApplicationsFiltersBar(props: FiltersBarProps) {
       />
 
       <MultiSelect
+        ariaLabel="Filter by company"
         placeholder="All companies"
         options={companyOptions}
         selected={toArray(filters.company)}
