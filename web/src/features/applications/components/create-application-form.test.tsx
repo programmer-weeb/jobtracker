@@ -11,6 +11,7 @@ const tags = [
   { id: 5, name: "urgent", color: "#ff0000" },
   { id: 6, name: "remote", color: "#2563eb" }
 ];
+const onCreateCompany = vi.fn();
 
 afterEach(() => {
   cleanup();
@@ -26,6 +27,7 @@ describe("CreateApplicationForm", () => {
         isSaving={false}
         onCancel={vi.fn()}
         onSubmit={onSubmit}
+        onCreateCompany={onCreateCompany}
       />
     );
 
@@ -58,6 +60,7 @@ describe("CreateApplicationForm", () => {
         isSaving={false}
         onCancel={vi.fn()}
         onSubmit={onSubmit}
+        onCreateCompany={onCreateCompany}
       />
     );
 
@@ -67,9 +70,10 @@ describe("CreateApplicationForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("requires a company and supports cancel", () => {
+  it("supports inline company creation and cancel", async () => {
     const onCancel = vi.fn();
-    const onSubmit = vi.fn();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const createCompany = vi.fn().mockResolvedValue({ id: 10, name: "NewCo", website: null, location: null });
     render(
       <CreateApplicationForm
         companies={[]}
@@ -77,17 +81,22 @@ describe("CreateApplicationForm", () => {
         isSaving={false}
         onCancel={onCancel}
         onSubmit={onSubmit}
+        onCreateCompany={createCompany}
       />
     );
 
     expect(screen.getByText("No tags available.")).toBeInTheDocument();
-    expect(screen.getByText("Add a company before creating an application.")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Application title"), { target: { value: "Frontend Engineer" } });
+    fireEvent.change(screen.getByLabelText("New company name"), { target: { value: "NewCo" } });
+    fireEvent.click(screen.getByRole("button", { name: /create application/i }));
+
+    await waitFor(() => expect(createCompany).toHaveBeenCalledWith("NewCo"));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ company_id: 10 })));
+
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
 
     expect(onCancel).toHaveBeenCalled();
-    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("creates, selects, and deletes tags from the form", async () => {
@@ -104,6 +113,7 @@ describe("CreateApplicationForm", () => {
         onSubmit={onSubmit}
         onCreateTag={onCreateTag}
         onDeleteTag={onDeleteTag}
+        onCreateCompany={onCreateCompany}
       />
     );
 

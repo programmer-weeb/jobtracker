@@ -82,7 +82,7 @@ export function CreateApplicationForm({
       try {
         const newCompany = await onCreateCompany(form.new_company_name.trim());
         companyId = newCompany.id;
-      } catch (e) {
+      } catch {
         setError("Failed to create company.");
         return;
       }
