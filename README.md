@@ -19,7 +19,7 @@ JobTracker helps users manage job applications through a Kanban workflow, search
 - **Pagination**: API returns pagination metadata and caps page size.
 - **Testing discipline**: RSpec request/model specs, Vitest/RTL frontend tests, coverage gates.
 - **CI quality gates**: Tests, linting, typechecking, production build, Brakeman, and bundler-audit.
-- **Deployment awareness**: Fly.io API template, Vercel SPA rewrites, env-based config.
+- **Deployment awareness**: Render Blueprints for multi-service infrastructure (Web, API, Worker, DB).
 
 ## Product Features
 
@@ -70,6 +70,10 @@ Every company, application, and tag belongs to a user. Controllers use Pundit po
 ### JWT With JTI Revocation
 
 The app uses stateless JWT authentication for API requests. To support logout, each user has a `jti` value. Logging out rotates the JTI, causing previously issued tokens to fail validation.
+
+### Rails 8 "Solid" Architecture
+
+In production, the app leverages the new Rails 8 **Solid Cache**, **Solid Queue**, and **Solid Cable** adapters. This allows background processing and caching to persist directly in the PostgreSQL database, eliminating the need for Redis while maintaining professional-grade performance and reliability.
 
 ### Kanban Sparse Positioning
 
@@ -226,8 +230,22 @@ Suggested commit groups:
 
 Deployment templates are included for both services:
 
-- API on Fly.io: `api/fly.toml`
-- Web on Vercel: `web/vercel.json`
+- **Render Blueprint**: `render.yaml` (Recommended for full multi-service stack)
+- Fly.io API template: `api/fly.toml`
+- Vercel SPA rewrites: `web/vercel.json`
+
+### Deployment via Render (Recommended)
+
+This project includes a `render.yaml` Blueprint that automates the creation of a professional infrastructure:
+
+1. Connect your GitHub repo to **Render**.
+2. Select the **Blueprint** option.
+3. Render will provision:
+   - **PostgreSQL Database**
+   - **Rails 8 API** (Dockerized)
+   - **Background Worker** (for Solid Queue processing)
+   - **React Static Site**
+4. Set the `RAILS_MASTER_KEY` environment variable from `api/config/master.key`.
 
 ### API on Fly.io
 
@@ -280,7 +298,7 @@ Current trade-offs:
 - JWTs are stored in localStorage for simplicity. For a higher-security production app, HttpOnly cookies with CSRF protection would be worth considering.
 - Search uses PostgreSQL `ILIKE`, which is fine for this scope. At larger scale, PostgreSQL full-text search or trigram indexes would be better.
 - The board fetches at most 100 applications for usability and rendering performance. The table view is the better interface for larger result sets.
-- Production demo runtime uses one Fly Postgres database with in-process cache, async jobs, and async cable because the app does not currently need durable background jobs or realtime broadcasts.
+- Production deployment uses **Render Blueprints** to manage a professional multi-service stack (Web + API + Background Worker + PostgreSQL).
 
 High-value next improvements:
 
