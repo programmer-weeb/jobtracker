@@ -20,6 +20,11 @@ export const routeTree = rootRoute.addChildren([
 
 export const router = createRouter({
   routeTree,
+  defaultPendingComponent: () => (
+    <div className="flex min-h-[200px] items-center justify-center p-8">
+      <div className="text-sm font-medium text-[var(--muted-foreground)]">Loading...</div>
+    </div>
+  ),
   context: {
     queryClient,
     auth: {

@@ -1,6 +1,5 @@
 import { createRoute } from "@tanstack/react-router";
 import { authenticatedRoute } from "./authenticated";
-import { ApplicationDetailPage } from "../features/applications/detail-page";
 import { queryKeys } from "../lib/query-keys";
 import { fetchApplication, fetchTags } from "../features/applications/api";
 
@@ -22,5 +21,4 @@ export const applicationDetailRoute = createRoute({
       })
     ]);
   },
-  component: ApplicationDetailPage
-});
+}).lazy(() => import("./application-detail.lazy").then((d) => d.Route));
