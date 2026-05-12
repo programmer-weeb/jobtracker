@@ -13,4 +13,12 @@ RSpec.describe User, type: :model do
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_presence_of(:email) }
   end
+
+  describe "callbacks" do
+    it "enqueues a welcome email after creation" do
+      expect {
+        create(:user)
+      }.to have_enqueued_job(WelcomeEmailJob).with(instance_of(User))
+    end
+  end
 end

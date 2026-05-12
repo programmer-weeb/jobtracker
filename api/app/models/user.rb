@@ -11,10 +11,15 @@ class User < ApplicationRecord
   validates :name, presence: true
 
   before_create :set_jti
+  after_create_commit :send_welcome_email_later
 
   private
 
   def set_jti
     self.jti ||= SecureRandom.uuid
+  end
+
+  def send_welcome_email_later
+    WelcomeEmailJob.perform_later(self)
   end
 end

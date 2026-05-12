@@ -22,6 +22,13 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   config.include FactoryBot::Syntax::Methods
   config.include AuthHelpers, type: :request
+  config.include ActiveJob::TestHelper
+
+  config.before do
+    clear_enqueued_jobs
+    clear_performed_jobs
+    ActionMailer::Base.deliveries.clear
+  end
 end
 
 Shoulda::Matchers.configure do |matcher_config|
