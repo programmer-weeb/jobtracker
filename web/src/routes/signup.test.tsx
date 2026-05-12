@@ -12,6 +12,7 @@ vi.mock("../features/auth/hooks", () => ({
 }));
 
 function renderSignup() {
+  const queryClient = new QueryClient();
   const boardRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/board",
@@ -21,13 +22,12 @@ function renderSignup() {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ["/signup"] }),
-    context: { auth: { hydrated: true, isAuthenticated: false } }
+    context: { queryClient, auth: { hydrated: true, isAuthenticated: false } }
   });
 
-  const queryClient = new QueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <RouterProvider router={router} context={{ queryClient, auth: { hydrated: true, isAuthenticated: false } }} />
     </QueryClientProvider>
   );
 }

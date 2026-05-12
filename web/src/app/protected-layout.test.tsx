@@ -22,19 +22,19 @@ vi.mock("../features/companies/hooks", () => ({
 
 describe("protected layout", () => {
   it("renders board route when authenticated", async () => {
+    const queryClient = new QueryClient();
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ["/board"] }),
-      context: { auth: { hydrated: true, isAuthenticated: true } }
+      context: { queryClient, auth: { hydrated: true, isAuthenticated: true } }
     });
 
-    const queryClient = new QueryClient();
     render(
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} context={{ auth: { hydrated: true, isAuthenticated: true } }} />
+        <RouterProvider router={router} context={{ queryClient, auth: { hydrated: true, isAuthenticated: true } }} />
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText("JobTracker")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Board" })).toBeInTheDocument();
   });
 });

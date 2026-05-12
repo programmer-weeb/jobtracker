@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
-import { BriefcaseBusiness, Building2, KanbanSquare, Search, Settings, ShoppingBag } from "lucide-react";
+import { BriefcaseBusiness, Building2, KanbanSquare, Settings } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { useLogout } from "../../features/auth/hooks";
