@@ -21,16 +21,16 @@ describe("normalizeApplicationFilters", () => {
   });
 
   it("preserves other filters alongside pagination", () => {
-    expect(normalizeApplicationFilters({ status: "applied", page: 2, per_page: 25 })).toEqual({
-      status: "applied",
+    expect(normalizeApplicationFilters({ status: ["applied"], page: 2, per_page: 25 })).toEqual({
+      status: ["applied"],
       page: 2
     });
   });
 
   it("handles page=2 round-trip with other filters", () => {
-    const input = { status: "interview", q: "senior", page: 2, per_page: 25 };
+    const input = { status: ["interview"], q: "senior", page: 2, per_page: 25 };
     const normalized = normalizeApplicationFilters(input as Parameters<typeof normalizeApplicationFilters>[0]);
-    expect(normalized).toEqual({ status: "interview", q: "senior", page: 2 });
+    expect(normalized).toEqual({ status: ["interview"], q: "senior", page: 2 });
   });
 
   it("trims search query and drops if empty", () => {

@@ -17,11 +17,11 @@ import { queryKeys } from "../../lib/query-keys";
 import { boardRoute } from "../../routes/board";
 import { useCompanies } from "../companies/hooks";
 import { Card } from "../../components/ui/card";
-import { useApplications, useMoveApplication, useTags, type ApplicationsFilters } from "../applications/hooks";
+import { useApplications, useMoveApplication, useTags } from "../applications/hooks";
 import { applicationStatuses, type ApplicationStatus, type ApplicationsResponse } from "../applications/model";
 import { normalizeApplicationFilters } from "../applications/api";
 import { ApplicationsFiltersBar } from "../applications/components/filters-bar";
-import { toSearchFilters } from "../applications/filters";
+import { toSearchFilters, type ApplicationsFilters } from "../applications/filters";
 import { parseCardId, resolveDragMove } from "./dnd";
 import { applyOptimisticMove, rollbackOptimisticMove } from "./optimistic";
 import { toBoardColumns } from "./model";
@@ -76,8 +76,8 @@ export function BoardPage() {
         fromStatus: input.fromStatus,
         queryKey: activeQueryKey
       }),
-    onError: (_err, _input, context: { previous?: ApplicationsResponse } | undefined) => {
-      rollbackOptimisticMove(queryClient, context?.previous, activeQueryKey);
+    onError: (_err, _input, onMutateResult) => {
+      rollbackOptimisticMove(queryClient, (onMutateResult as { previous?: ApplicationsResponse } | undefined)?.previous, activeQueryKey);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: activeQueryKey, exact: true });

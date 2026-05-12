@@ -1,4 +1,5 @@
 import { http } from "../../lib/http";
+import type { ApplicationsFilters } from "./filters";
 import type {
   ApplicationResponse,
   ApplicationStatus,
@@ -7,16 +8,6 @@ import type {
   TagSummary,
   TagsResponse
 } from "./model";
-
-export interface ApplicationsFilters extends Record<string, string | number | boolean | undefined | string[] | number[]> {
-  status?: ApplicationStatus | ApplicationStatus[];
-  q?: string;
-  tag?: number | number[];
-  remote?: boolean;
-  company?: number | number[];
-  page?: number;
-  per_page?: number;
-}
 
 export interface MoveApplicationInput {
   id: number;
@@ -55,8 +46,8 @@ export function normalizeApplicationFilters(filters: ApplicationsFilters = {}): 
   const normalized: ApplicationsFilters = {};
 
   if (filters.status) {
-    const status = Array.isArray(filters.status) ? filters.status.filter(Boolean) : filters.status;
-    if (Array.isArray(status) ? status.length > 0 : status) {
+    const status = filters.status.filter(Boolean);
+    if (status.length > 0) {
       normalized.status = status;
     }
   }
@@ -64,8 +55,8 @@ export function normalizeApplicationFilters(filters: ApplicationsFilters = {}): 
   if (filters.q && filters.q.trim()) normalized.q = filters.q.trim();
 
   if (filters.tag !== undefined) {
-    const tag = Array.isArray(filters.tag) ? filters.tag.filter((t) => t !== undefined) : filters.tag;
-    if (Array.isArray(tag) ? tag.length > 0 : tag !== undefined) {
+    const tag = filters.tag.filter((t) => t !== undefined);
+    if (tag.length > 0) {
       normalized.tag = tag;
     }
   }
@@ -73,8 +64,8 @@ export function normalizeApplicationFilters(filters: ApplicationsFilters = {}): 
   if (filters.remote !== undefined) normalized.remote = filters.remote;
 
   if (filters.company !== undefined) {
-    const company = Array.isArray(filters.company) ? filters.company.filter((c) => c !== undefined) : filters.company;
-    if (Array.isArray(company) ? company.length > 0 : company !== undefined) {
+    const company = filters.company.filter((c) => c !== undefined);
+    if (company.length > 0) {
       normalized.company = company;
     }
   }

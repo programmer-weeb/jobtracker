@@ -207,8 +207,14 @@ describe("BoardPage", () => {
 
   it("filter onChange calls navigate with page cleared", () => {
     renderWithClient();
-    fireEvent.change(screen.getByLabelText("Filter by status"), { target: { value: "applied" } });
-    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({ to: "/board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Filter by status" }));
+    fireEvent.click(screen.getByText("applied"));
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: "/board",
+      search: expect.objectContaining({ status: ["applied"] })
+    });
+    const latestCall = navigateMock.mock.calls.at(-1)?.[0] as { search?: { page?: number } };
+    expect(latestCall.search?.page).toBeUndefined();
   });
 
   it("search input change calls navigate after debounce", () => {

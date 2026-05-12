@@ -13,7 +13,7 @@ describe("application filter normalization", () => {
         unknown: "value",
         badTag: "xx"
       })
-    ).toEqual({ status: "applied", q: "rails", tag: 5, company: 2, remote: false, page: undefined, per_page: undefined });
+    ).toEqual({ status: ["applied"], q: "rails", tag: [5], company: [2], remote: false, page: undefined, per_page: undefined });
   });
 
   it("parses remote true/false and invalid as undefined", () => {
@@ -23,12 +23,12 @@ describe("application filter normalization", () => {
   });
 
   it("builds stable search object", () => {
-    expect(toSearchFilters({ status: "interview", q: "x", tag: 1, remote: true, company: 7 })).toEqual({
-      status: "interview",
+    expect(toSearchFilters({ status: ["interview"], q: "x", tag: [1], remote: true, company: [7] })).toEqual({
+      status: ["interview"],
       q: "x",
-      tag: 1,
+      tag: [1],
       remote: true,
-      company: 7,
+      company: [7],
       page: undefined,
       per_page: undefined
     });

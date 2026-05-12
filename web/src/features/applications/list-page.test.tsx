@@ -80,12 +80,12 @@ afterEach(() => {
 
 describe("ApplicationsPage filters", () => {
   it("renders list and sends active filters to applications api", async () => {
-    useSearchMock.mockReturnValue({ q: "rails", status: "applied", tag: 5, remote: true, company: 2 });
+    useSearchMock.mockReturnValue({ q: "rails", status: ["applied"], tag: [5], remote: true, company: [2] });
 
     renderPage();
 
     expect(await screen.findByText("Backend Engineer")).toBeInTheDocument();
-    await waitFor(() => expect(fetchApplicationsMock).toHaveBeenCalledWith({ q: "rails", status: "applied", tag: 5, remote: true, company: 2 }));
+    await waitFor(() => expect(fetchApplicationsMock).toHaveBeenCalledWith({ q: "rails", status: ["applied"], tag: [5], remote: true, company: [2] }));
   });
 
   it("debounces q updates and keeps exact filter params in url", async () => {
@@ -102,20 +102,17 @@ describe("ApplicationsPage filters", () => {
       search: expect.objectContaining({ q: "golang" })
     }));
 
-    fireEvent.change(screen.getByLabelText("Filter by status"), { target: { value: "interview" } });
+    fireEvent.click(screen.getByRole("button", { name: "Filter by tag" }));
+    fireEvent.click(screen.getByText("urgent"));
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
       to: "/applications",
-      search: expect.objectContaining({ status: "interview" })
+      search: expect.objectContaining({ tag: [5] })
     }));
-    fireEvent.change(screen.getByLabelText("Filter by tag"), { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Filter by company" }));
+    fireEvent.click(screen.getAllByText("Acme")[0]);
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
       to: "/applications",
-      search: expect.objectContaining({ tag: 5 })
-    }));
-    fireEvent.change(screen.getByLabelText("Filter by company"), { target: { value: "2" } });
-    expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
-      to: "/applications",
-      search: expect.objectContaining({ company: 2 })
+      search: expect.objectContaining({ company: [2] })
     }));
     fireEvent.change(screen.getByLabelText("Filter by remote"), { target: { value: "false" } });
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -125,7 +122,7 @@ describe("ApplicationsPage filters", () => {
   });
 
   it("reset filters clears url search object", async () => {
-    useSearchMock.mockReturnValue({ q: "rails", status: "offer", tag: 5, remote: false, company: 2 });
+    useSearchMock.mockReturnValue({ q: "rails", status: ["offer"], tag: [5], remote: false, company: [2] });
     renderPage();
     await screen.findByText("Backend Engineer");
 
@@ -133,16 +130,16 @@ describe("ApplicationsPage filters", () => {
 
     expect(navigateMock).toHaveBeenCalledWith({
       to: "/applications",
-      search: { status: undefined, q: undefined, tag: undefined, remote: undefined, company: undefined }
+      search: { status: undefined, q: undefined, tag: undefined, remote: undefined, company: undefined, page: undefined, per_page: undefined }
     });
   });
 
   it("resets page to 1 when filters change", async () => {
-    useSearchMock.mockReturnValue({ status: "applied", page: 3 });
+    useSearchMock.mockReturnValue({ status: ["applied"], page: 3 });
     renderPage();
     await screen.findByText("Backend Engineer");
 
-    fireEvent.change(screen.getByLabelText("Filter by status"), { target: { value: "interview" } });
+    fireEvent.change(screen.getByLabelText("Filter by remote"), { target: { value: "false" } });
     
     expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({
       to: "/applications",

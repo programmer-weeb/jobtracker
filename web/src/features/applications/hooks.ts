@@ -13,10 +13,10 @@ import {
   moveApplication,
   normalizeApplicationFilters,
   updateApplication,
-  type ApplicationsFilters,
   type CreateApplicationInput,
   type UpdateApplicationInput
 } from "./api";
+import type { ApplicationsFilters } from "./filters";
 import type { Application, ApplicationStatus, ApplicationsResponse, Note, TagSummary } from "./model";
 
 export type { ApplicationsFilters };
@@ -196,20 +196,22 @@ export interface MoveApplicationVariables {
   fromStatus: ApplicationStatus;
 }
 
+type MoveApplicationContext = unknown;
+
 export function useMoveApplication(
-  options?: UseMutationOptions<Application, Error, MoveApplicationVariables, any>
+  options?: UseMutationOptions<Application, Error, MoveApplicationVariables, MoveApplicationContext>
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, status, position }: MoveApplicationVariables) => moveApplication({ id, status, position }),
     ...options,
-    onSuccess: async (data, variables, context) => {
+    onSuccess: async (data, variables, onMutateResult, context) => {
       syncApplicationInCaches(queryClient, data);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       
       if (options?.onSuccess) {
-        await options.onSuccess(data, variables, context);
+        await options.onSuccess(data, variables, onMutateResult, context);
       }
     }
   });
