@@ -16,6 +16,7 @@ class AuthController < ApplicationController
       return render json: { error: "Invalid email or password" }, status: :unauthorized
     end
 
+    SignInEmailJob.perform_later(user)
     render_auth_payload(user, :ok)
   end
 

@@ -22,24 +22,28 @@ RSpec.describe "Auth", type: :request do
     let!(:user) { create(:user, email: "login@example.com", password: "password123") }
 
     it "returns token for valid credentials" do
-      post "/auth/login", params: {
-        user: {
-          email: "login@example.com",
-          password: "password123"
-        }
-      }, as: :json
+      expect {
+        post "/auth/login", params: {
+          user: {
+            email: "login@example.com",
+            password: "password123"
+          }
+        }, as: :json
+      }.to have_enqueued_job(SignInEmailJob).with(user)
 
       expect(response).to have_http_status(:ok)
       expect(response.headers["Authorization"]).to start_with("Bearer ")
     end
 
     it "rejects invalid credentials" do
-      post "/auth/login", params: {
-        user: {
-          email: "login@example.com",
-          password: "wrong-password"
-        }
-      }, as: :json
+      expect {
+        post "/auth/login", params: {
+          user: {
+            email: "login@example.com",
+            password: "wrong-password"
+          }
+        }, as: :json
+      }.not_to have_enqueued_job(SignInEmailJob)
 
       expect(response).to have_http_status(:unauthorized)
       expect(JSON.parse(response.body)).to eq("error" => "Invalid email or password")
