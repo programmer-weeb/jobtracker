@@ -10,7 +10,7 @@ services:
     name: jobtracker-api
     env: docker
     dockerContext: api
-    dockerFilePath: api/Dockerfile
+    dockerfilePath: api/Dockerfile
     plan: free # Change to starter to avoid cold starts
     healthCheckPath: /up
     envVars:
@@ -40,7 +40,7 @@ services:
     name: jobtracker-worker
     env: docker
     dockerContext: api
-    dockerFilePath: api/Dockerfile
+    dockerfilePath: api/Dockerfile
     plan: starter # Render Workers require at least starter plan
     dockerCommand: ./bin/jobs
     envVars:
