@@ -3,6 +3,9 @@
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:create db:migrate
+  if [ "$ALLOW_DEMO_SEED" == "1" ]; then
+    ALLOW_DEMO_SEED=1 ./bin/rails demo:seed
+  fi
 fi
 
 exec "${@}"
