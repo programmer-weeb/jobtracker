@@ -1,5 +1,7 @@
 # Job Application Tracker
 
+**Live demo:** https://jobtracker-web-tpx8.onrender.com/
+
 ![Rails](https://img.shields.io/badge/Rails-8-CC0000?logo=rubyonrails) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react) ![Coverage API](https://img.shields.io/badge/api%20coverage-91.9%25-brightgreen) ![Coverage Web](https://img.shields.io/badge/web%20coverage-88.3%25-brightgreen)
 
 I built this tracker to manage my own job applications while trying out Rails 8. It handles the usual stuff—Kanban board, searchable tables, notes—but the focus was really on seeing how a modern Rails API feels with React 19.
