@@ -1,12 +1,11 @@
-services:
-  # 1. PostgreSQL Database
-  - type: db
-    name: jobtracker-db
+databases:
+  - name: jobtracker-db
     databaseName: jobtracker
     user: jobtracker
     plan: free # Change to starter for better performance
 
-  # 2. Rails API
+services:
+  # 1. Rails API
   - type: web
     name: jobtracker-api
     env: docker
