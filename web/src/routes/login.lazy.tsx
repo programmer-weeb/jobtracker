@@ -1,4 +1,6 @@
 import { createLazyRoute, Link } from "@tanstack/react-router";
+import { isAxiosError } from "axios";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,14 +17,35 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+function toErrorMessage(error: unknown) {
+  if (isAxiosError(error)) {
+    const data = error.response?.data as { error?: string; errors?: string[] } | undefined;
+    if (Array.isArray(data?.errors) && data.errors.length > 0) {
+      return data.errors.join(", ");
+    }
+    if (data?.error) {
+      return data.error;
+    }
+  }
+
+  return "Unable to sign in. Check your email and password, then try again.";
+}
+
 function LoginPage() {
   const login = useLogin();
   const navigate = Route.useNavigate();
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await login.mutateAsync(values);
-    await navigate({ to: "/board" });
+    setSubmitError(null);
+
+    try {
+      await login.mutateAsync(values);
+      await navigate({ to: "/board" });
+    } catch (error) {
+      setSubmitError(toErrorMessage(error));
+    }
   });
 
   return (
@@ -54,6 +77,11 @@ function LoginPage() {
               <p className="mt-1 text-xs text-[var(--danger)]">{form.formState.errors.password.message}</p>
             )}
           </div>
+          {submitError && (
+            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
+              {submitError}
+            </p>
+          )}
           <Button className="w-full" type="submit" disabled={login.isPending}>
             {login.isPending ? "Signing in..." : "Sign in"}
           </Button>

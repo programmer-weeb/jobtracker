@@ -63,4 +63,22 @@ describe("login form", () => {
       });
     });
   });
+
+  it("shows the API error when credentials are rejected", async () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: { error: "Invalid email or password" }
+      }
+    };
+    loginMutateAsyncMock.mockRejectedValue(error);
+    renderLogin();
+
+    const submitButton = await screen.findByRole("button", { name: /sign in/i });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "dev@example.com" } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "wrongpassword" } });
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/invalid email or password/i);
+  });
 });

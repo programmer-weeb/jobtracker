@@ -64,6 +64,10 @@ services:
     staticPublishPath: dist
     rootDir: web
     plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
         fromService:
