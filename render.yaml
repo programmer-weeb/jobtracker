@@ -28,6 +28,13 @@ services:
           type: web
           name: jobtracker-web
           property: url
+      - key: DEVISE_JWT_SECRET_KEY
+        sync: false # Generate with: bundle exec rails secret
+      - key: APP_HOST
+        fromService:
+          type: web
+          name: jobtracker-api
+          property: host
 
   # 3. Solid Queue Worker
   - type: worker
@@ -45,6 +52,8 @@ services:
           name: jobtracker-db
           property: connectionString
       - key: RAILS_MASTER_KEY
+        sync: false
+      - key: DEVISE_JWT_SECRET_KEY
         sync: false
 
   # 4. React Frontend
