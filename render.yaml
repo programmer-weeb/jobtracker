@@ -23,17 +23,11 @@ services:
       - key: RAILS_MASTER_KEY
         sync: false # You must set this in the Render dashboard
       - key: CORS_ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: jobtracker-web
-          property: host
+        value: jobtracker.ahmedmelouk.com
       - key: DEVISE_JWT_SECRET_KEY
         sync: false # Generate with: bundle exec rails secret
       - key: APP_HOST
-        fromService:
-          type: web
-          name: jobtracker-api
-          property: host
+        value: api.jobtracker.ahmedmelouk.com
 
 
   # 3. Solid Queue Worker
@@ -70,7 +64,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: jobtracker-api
-          property: host
+        value: api.jobtracker.ahmedmelouk.com
