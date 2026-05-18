@@ -1,6 +1,6 @@
 # Job Application Tracker
 
-**Live demo:** https://jobtracker-web-tpx8.onrender.com/
+**Live demo:** https://jobtracker.ahmedmelouk.com/
 
 Login with `demo@example.com` / `password123`.
 
